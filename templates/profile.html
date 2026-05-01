@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Profile Card -->
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center p-4">
+
+          <!-- Profile Image -->
+          <img src="{{ user.profileImageUrl if user.profileImageUrl else url_for('static', filename='img/avatar.png') }}"
+               class="rounded-circle mb-3"
+               style="width:120px; height:120px; object-fit:cover;"
+               alt="Profile picture">
+
+          <!-- Name -->
+          <h3 class="mb-1">{{ user.getFullName() }}</h3>
+
+          <!-- Major + Role -->
+          <p class="text-muted mb-2">
+            {{ user.major }} • {{ user.role|capitalize }}
+          </p>
+
+          <!-- Bio -->
+          <p class="mb-3">
+            {{ user.bio if user.bio else "No bio yet." }}
+          </p>
+
+          <!-- Email -->
+          <p class="text-muted small">
+            {{ user.scsuEmail }}
+          </p>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Info Grid -->
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-10">
+
+      <div class="row g-3">
+
+        <!-- Interests -->
+        <div class="col-md-6">
+          <div class="p-3 bg-light rounded h-100">
+            <h6>Interests</h6>
+
+            {% if user.interests %}
+              <div>
+                {% for interest in user.interests %}
+                  <span class="badge bg-primary me-1 mb-1">{{ interest }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted">No interests added</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Account Status -->
+        <div class="col-md-6">
+          <div class="p-3 bg-light rounded h-100">
+            <h6>Account Info</h6>
+
+            <p class="mb-1">
+              <strong>Status:</strong> {{ user.status }}
+            </p>
+
+            <p class="mb-1">
+              <strong>Joined:</strong> {{ user.createdAt.strftime('%b %d, %Y') }}
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Study Groups -->
+      <div class="mt-4">
+        <h5>Study Groups</h5>
+
+        {% set active_memberships = user.memberships | selectattr("status", "equalto", "active") | list %}
+
+        {% if active_memberships %}
+          <div class="list-group">
+            {% for m in active_memberships %}
+              {% if m.group %}
+                <div class="list-group-item">
+                  <strong>{{ m.group.title }}</strong><br>
+                  <small class="text-muted">{{ m.group.subject }}</small>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">Not part of any study groups yet.</p>
+        {% endif %}
+      </div>
+
+      <!-- Created Groups -->
+      <div class="mt-4">
+        <h5>Created Groups</h5>
+
+        {% if user.createdStudyGroups %}
+          <div class="list-group">
+            {% for group in user.createdStudyGroups %}
+              <div class="list-group-item">
+                <strong>{{ group.title }}</strong><br>
+                <small class="text-muted">{{ group.subject }}</small>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No groups created yet.</p>
+        {% endif %}
+      </div>
+
+      <!-- Activity -->
+      <div class="mt-4">
+        <h5>Activity</h5>
+
+        <div class="row g-2">
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded text-center">
+              <strong>{{ user.sentMessages|length }}</strong><br>
+              <small>Messages Sent</small>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded text-center">
+              <strong>{{ user.reviews|length }}</strong><br>
+              <small>Reviews</small>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded text-center">
+              <strong>{{ user.notifications|length }}</strong><br>
+              <small>Notifications</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
