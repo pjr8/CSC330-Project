@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SCSU Study Group Scheduler - Home</title>
+</head>
+<body>
+    <h1>Welcome, {{ user.firstName }}</h1>
+    <p>Major: {{ user.major }}</p>
+
+    <h2>Navigation</h2>
+<ul>
+    <li><a href="#">Create Group</a></li>
+    <li><a href="#">Browse Groups</a></li>
+    <li><a href="#">Messages</a></li>
+</ul>
+
+    <h2>Available Study Groups</h2>
+
+    <ul>
+        {% for group in groups %}
+            <li>
+                <strong>{{ group.title }}</strong><br>
+                Subject: {{ group.subject }}<br>
+                {{ group.description }}
+            </li>
+            <br>
+        {% endfor %}
+    </ul>
+
+    <br>
+    <a href="/">Logout</a>
+</body>
+</html>
