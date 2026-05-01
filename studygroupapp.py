@@ -1,18 +1,24 @@
-from flask import Flask
+from flask import Flask, render_template
+from models import User  # type: ignore
 
+app = Flask(__name__)
 
-def create_app() -> Flask:
-    app = Flask(__name__)
+@app.route("/")
+def index():
+    return render_template("index.html")
 
-    @app.route("/")
-    def index() -> str:
-        return "Study Group App"
+@app.route("/profile")
+def profile():
+    user = User(
+        firstName="Bianka",
+        lastName="Edouard",
+        scsuEmail="student@example.com",
+        major="Computer Science",
+        bio="Student interested in web development, Python, and building useful campus tools.",
+        interests=["Flask", "UI design", "algorithms"]
+    )
 
-    return app
-
-
-app = create_app()
-
+    return render_template("profile.html", user=user)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=8080, debug=True)
