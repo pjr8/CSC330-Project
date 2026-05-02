@@ -53,6 +53,17 @@ def create_app() -> Flask:
     @app.route("/home")
     def home():
         return render_template("home.html", user=test_user, groups=sample_groups)
+    @app.route("/create")
+    def create_group():
+        return "Create Group Page Coming Soon"
+
+    @app.route("/browse")
+    def browse_groups():
+        return "Browse Groups Page Coming Soon"
+
+    @app.route("/messages")
+    def messages():
+        return "Messages Page Coming Soon"    
 
     return app
 
