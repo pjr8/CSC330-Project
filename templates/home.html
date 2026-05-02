@@ -1,34 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>SCSU Study Group Scheduler - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Welcome, {{ user.firstName }}</h1>
-    <p>Major: {{ user.major }}</p>
 
-    <h2>Navigation</h2>
-<ul>
-    <li><a href="/create">Create Group</a></li>
-    <li><a href="/browse">Browse Groups</a></li>
-    <li><a href="/messages">Messages</a></li>
-</ul>
+    <div class="home-container">
+        <h1>Welcome, {{ user.firstName }}</h1>
+        <p>Major: {{ user.major }}</p>
 
-    <h2>Available Study Groups</h2>
+        <h2>Navigation</h2>
+        <ul>
+            <li><a href="/create">Create Group</a></li>
+            <li><a href="/browse">Browse Groups</a></li>
+            <li><a href="/messages">Messages</a></li>
+        </ul>
 
-    <ul>
-        {% for group in groups %}
-            <li>
-                <strong>{{ group.title }}</strong><br>
-                Subject: {{ group.subject }}<br>
-                {{ group.description }}
-            </li>
-            <br>
-        {% endfor %}
-    </ul>
+        <h2>Available Study Groups</h2>
 
-    <br>
-    <a href="/">Logout</a>
+        <div class="group-list">
+            {% for group in groups %}
+                <div class="listing-row">
+                    <strong>{{ group.title }}</strong><br>
+                    Subject: {{ group.subject }}<br>
+                    {{ group.description }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <br>
+        <a href="/">Logout</a>
+    </div>
+
 </body>
 </html>
