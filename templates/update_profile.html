@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Update Profile{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width:600px;">
+
+  <div class="card shadow-sm p-4">
+
+    <h4 class="mb-3">Update Profile</h4>
+
+    <form method="POST">
+
+      <!-- First Name -->
+      <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <input type="text"
+               name="firstName"
+               class="form-control"
+               value="{{ user.firstName }}">
+      </div>
+
+      <!-- Last Name -->
+      <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <input type="text"
+               name="lastName"
+               class="form-control"
+               value="{{ user.lastName }}">
+      </div>
+
+      <!-- Major -->
+      <div class="mb-3">
+        <label class="form-label">Major</label>
+        <input type="text"
+               name="major"
+               class="form-control"
+               value="{{ user.major }}">
+      </div>
+
+      <!-- Bio -->
+      <div class="mb-3">
+        <label class="form-label">Bio</label>
+        <textarea name="bio" class="form-control">{{ user.bio }}</textarea>
+      </div>
+
+      <!-- Interests -->
+      <div class="mb-3">
+        <label class="form-label">Interests (comma separated)</label>
+        <input type="text"
+               name="interests"
+               class="form-control"
+               value="{{ user.interests | join(', ') }}">
+      </div>
+
+      <!-- Buttons -->
+      <button type="submit" class="btn btn-primary w-100">
+        Save Changes
+      </button>
+
+      <a href="{{ url_for('profile') }}" class="btn btn-link w-100 mt-2">
+        Cancel
+      </a>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}
