@@ -25,7 +25,14 @@
                placeholder="Interests (comma separated)"
                value="{{ user.interests | join(', ') }}">
 
-        <button class="btn btn-primary w-100">Save Changes</button>
+         <!-- CONTACT FIELD (NEW) -->
+        <textarea class="form-control mb-3"
+                  name="contactInfo"
+                  placeholder="Best ways to reach you (email, discord, etc.)">{{ user.contactInfo }}</textarea>
+
+        <button class="btn btn-primary w-100">
+          Save Changes
+        </button>
 
       </form>
 
