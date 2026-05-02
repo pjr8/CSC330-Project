@@ -1,0 +1,114 @@
+/* =========================
+   SCSU BRAND SYSTEM
+   ========================= */
+:root {
+  --scsu-blue: #003399;
+  --scsu-cyan: #00ADEB;
+  --scsu-yellow: #FFCC40;
+  --scsu-white: #FFFFFF;
+  --scsu-gray: #818181;
+}
+
+/* =========================
+   GLOBAL
+   ========================= */
+body {
+  background-color: #f4f6fb;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #1a1a1a;
+}
+
+/* =========================
+   NAVBAR (REFLEX BLUE CORE)
+   ========================= */
+.scsu-navbar {
+  background-color: var(--scsu-blue);
+  border-bottom: 4px solid var(--scsu-cyan);
+}
+
+.navbar-brand,
+.nav-link {
+  color: var(--scsu-white) !important;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  color: var(--scsu-yellow) !important;
+}
+
+/* Logo rules (no distortion) */
+.scsu-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* =========================
+   CARDS (ACADEMIC STYLE)
+   ========================= */
+.card {
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* =========================
+   PROFILE AVATAR
+   ========================= */
+.profile-avatar {
+  border: 3px solid var(--scsu-blue);
+  padding: 2px;
+  background: white;
+}
+
+/* =========================
+   BUTTONS (SCSU STYLE)
+   ========================= */
+.btn-primary {
+  background-color: var(--scsu-blue);
+  border-color: var(--scsu-blue);
+}
+
+.btn-primary:hover {
+  background-color: #002a80;
+}
+
+.btn-outline-primary {
+  color: var(--scsu-blue);
+  border-color: var(--scsu-blue);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--scsu-blue);
+  color: white;
+}
+
+/* =========================
+   BADGES (INTERESTS)
+   ========================= */
+.badge {
+  background-color: var(--scsu-cyan);
+  font-weight: 500;
+}
+
+/* =========================
+   TYPOGRAPHY
+   ========================= */
+h3, h4, h5 {
+  color: var(--scsu-blue);
+  font-weight: 600;
+}
+
+.text-muted {
+  color: var(--scsu-gray) !important;
+}
+
+/* =========================
+   ACCESSIBILITY FOCUS
+   ========================= */
+a:focus,
+button:focus,
+input:focus {
+  outline: 3px solid var(--scsu-yellow);
+  outline-offset: 2px;
+}

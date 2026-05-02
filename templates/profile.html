@@ -4,69 +4,39 @@
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="row justify-content-center">
 
-  <div class="row justify-content-center">
-    <div class="col-md-8">
+  <div class="col-md-8">
 
-      <!-- Profile Card -->
-      <div class="card shadow-sm p-4 text-center">
+    <!-- PROFILE CARD -->
+    <div class="card p-4 text-center">
 
-        <img src="{{ user.profileImageUrl if user.profileImageUrl else url_for('static', filename='img/avatar.png') }}"
-             class="rounded-circle mx-auto mb-3"
-             width="120" height="120"
-             style="object-fit: cover;">
+      <img src="{{ user.profileImageUrl if user.profileImageUrl else url_for('static', filename='img/avatar.png') }}"
+           class="rounded-circle mx-auto profile-avatar"
+           width="120" height="120">
 
-        <h3>{{ user.firstName }} {{ user.lastName }}</h3>
+      <h3 class="mt-3">{{ user.firstName }} {{ user.lastName }}</h3>
 
-        <p class="text-muted">{{ user.major }}</p>
+      <p class="text-muted">{{ user.major }}</p>
 
-        <p>{{ user.bio if user.bio else "No bio yet." }}</p>
+      <p>{{ user.bio }}</p>
 
-        <p class="small text-muted">{{ user.scsuEmail }}</p>
-
-        <!-- UPDATE BUTTON -->
-        <a href="{{ url_for('update_profile') }}" class="btn btn-outline-primary btn-sm mt-2">
-          Update Profile
-        </a>
-
-      </div>
-
-      <!-- Interests -->
-      <div class="card shadow-sm mt-3 p-3">
-        <h5>Interests</h5>
-
-        {% if user.interests %}
-          {% for interest in user.interests %}
-            <span class="badge bg-primary me-1">{{ interest }}</span>
-          {% endfor %}
-        {% else %}
-          <p class="text-muted">No interests yet</p>
-        {% endif %}
-      </div>
-
-      <!-- Study Groups -->
-      <div class="card shadow-sm mt-3 p-3">
-        <h5>Study Groups</h5>
-
-        {% set active = user.memberships | selectattr("status", "equalto", "active") | list %}
-
-        {% if active %}
-          {% for m in active %}
-            {% if m.group %}
-              <div class="border-bottom py-2">
-                <strong>{{ m.group.title }}</strong><br>
-                <small class="text-muted">{{ m.group.subject }}</small>
-              </div>
-            {% endif %}
-          {% endfor %}
-        {% else %}
-          <p class="text-muted">No groups yet</p>
-        {% endif %}
-
-      </div>
+      <a href="{{ url_for('update_profile') }}"
+         class="btn btn-outline-primary btn-sm mt-2">
+        Update Profile
+      </a>
 
     </div>
+
+    <!-- INTERESTS -->
+    <div class="card p-4 mt-3">
+      <h5>Interests</h5>
+
+      {% for interest in user.interests %}
+        <span class="badge me-1 mb-1">{{ interest }}</span>
+      {% endfor %}
+    </div>
+
   </div>
 
 </div>
