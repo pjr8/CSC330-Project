@@ -26,6 +26,7 @@ def update_profile():
         user_data["lastName"] = request.form.get("lastName")
         user_data["major"] = request.form.get("major")
         user_data["bio"] = request.form.get("bio")
+        user_data["contactInfo"] = request.form.get("contactInfo")
 
         interests = request.form.get("interests")
         user_data["interests"] = [i.strip() for i in interests.split(",")] if interests else []
