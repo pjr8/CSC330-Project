@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>SCSU Study Group Scheduler - Home</title>
 </head>
 <body>
@@ -9,9 +10,9 @@
 
     <h2>Navigation</h2>
 <ul>
-    <li><a href="#">Create Group</a></li>
-    <li><a href="#">Browse Groups</a></li>
-    <li><a href="#">Messages</a></li>
+    <li><a href="/create">Create Group</a></li>
+    <li><a href="/browse">Browse Groups</a></li>
+    <li><a href="/messages">Messages</a></li>
 </ul>
 
     <h2>Available Study Groups</h2>
