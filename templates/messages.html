@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SCSU Messages</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #FFFFFF;
+        }
+
+        /* HEADER */
+        .header {
+            background: #003399;
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .header img {
+            height: 40px;
+            margin-right: 15px;
+        }
+
+        /* LAYOUT */
+        .container {
+            display: flex;
+            height: 90vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 30%;
+            border-right: 1px solid #ccc;
+            background: #f7f9fc;
+            padding: 10px;
+        }
+
+        .chat-user {
+            padding: 12px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .chat-user.active {
+            background: #003399;
+            color: white;
+        }
+
+        /* CHAT AREA */
+        .chat {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin: 10px 0;
+            max-width: 60%;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .sent {
+            background: #003399;
+            color: white;
+            margin-left: auto;
+        }
+
+        .received {
+            background: #e6e6e6;
+        }
+
+        /* INPUT */
+        .input-box {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #ccc;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            margin-left: 10px;
+            padding: 12px 20px;
+            background: #003399;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #016ABD;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- HEADER WITH LOGO -->
+<div class="header">
+    <!-- Replace with official SCSU logo PNG -->
+    <img src="/static/scsu-logo.png" alt="SCSU Logo">
+    <h2>Student Messaging Portal</h2>
+</div>
+
+<div class="container">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="chat-user active">John Smith</div>
+        <div class="chat-user">Sarah Lee</div>
+        <div class="chat-user">Group Chat</div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="chat">
+
+        <div class="messages" id="messages">
+            <div class="message received">Hey, are we meeting today?</div>
+            <div class="message sent">Yes, at 3 PM in the library.</div>
+        </div>
+
+        <div class="input-box">
+            <input type="text" id="msgInput" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function sendMessage() {
+    let input = document.getElementById("msgInput");
+    let text = input.value;
+
+    if (text.trim() === "") return;
+
+    let msg = document.createElement("div");
+    msg.className = "message sent";
+    msg.innerText = text;
+
+    document.getElementById("messages").appendChild(msg);
+    input.value = "";
+}
+</script>
+
+</body>
+</html>
