@@ -15,14 +15,13 @@
                 <div class="brand-lockup__mark" aria-hidden="true">SC</div>
                 <div>
                     <p class="brand-lockup__kicker">Southern Connecticut State University</p>
-                    <a class="brand-lockup__wordmark" href="{{ url_for('index') }}">Study Groups</a>
+                    <a class="brand-lockup__wordmark" href="{{ url_for('home') }}">Study Groups</a>
                 </div>
             </div>
 
             <nav class="top-nav" aria-label="Primary">
-                <a class="top-nav__link top-nav__link--active" href="{{ url_for('study_groups.listings') }}">Listings</a>
-                <a class="top-nav__link" href="#">My Groups</a>
-                <a class="top-nav__link" href="#">Messages</a>
+                <a class="top-nav__link" href="/profile">Profile</a>
+                <a class="top-nav__link top-nav__link--quiet" href="/">Logout</a>
             </nav>
         </div>
     </header>
