@@ -11,8 +11,9 @@
     <!-- PROFILE CARD -->
     <div class="card p-4 text-center">
 
-      <img src="{{ user.profileImageUrl if user.profileImageUrl else url_for('static', filename='img/default-user.png') }}"
+      <img src="{{ user.profileImageUrl if user.profileImageUrl else url_for('static', filename='img/default-user.svg') }}"
            class="rounded-circle mx-auto profile-avatar"
+           alt="{{ user.firstName }} {{ user.lastName }} profile picture"
            width="120" height="120">
 
       <h3 class="profile-name">{{ user.firstName }} {{ user.lastName }}</h3>
