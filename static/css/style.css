@@ -1,144 +1,212 @@
 /* =========================
-   SCSU BRAND SYSTEM
+   SOUTHERN CONNECTICUT STATE UNIVERSITY PROFILE THEME
    ========================= */
 :root {
   --scsu-blue: #003399;
-  --scsu-cyan: #00ADEB;
-  --scsu-yellow: #FFCC40;
-  --scsu-white: #FFFFFF;
+  --scsu-cyan: #00adeb;
+  --scsu-white: #ffffff;
+  --scsu-gold: #ffcc40;
+  --scsu-yellow: #fff200;
+  --scsu-medium-blue: #016abd;
   --scsu-gray: #818181;
+  --scsu-ink: #111827;
+  --scsu-border: #c9d5ee;
+  --scsu-page: #f5f8fc;
 }
 
-/* =========================
-   GLOBAL
-   ========================= */
 body {
-  background-color: #f4f6fb;
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(0, 51, 153, 0.08), rgba(255, 255, 255, 0) 320px),
+    var(--scsu-page);
+  color: var(--scsu-ink);
   font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
-  color: #1a1a1a;
 }
 
-/* =========================
-   NAVBAR (REFLEX BLUE CORE)
-   ========================= */
 .scsu-navbar {
-  background-color: var(--scsu-blue);
-  border-bottom: 4px solid var(--scsu-yellow);
+  background: var(--scsu-blue);
+  border-bottom: 5px solid var(--scsu-gold);
+  box-shadow: 0 4px 18px rgba(0, 51, 153, 0.12);
 }
 
-.navbar-brand,
-.nav-link {
-  color: var(--scsu-white) !important;
-  font-weight: 500;
-  font-family: Cochin, Georgia, "Times New Roman", Times, serif;
+.scsu-navbar .container {
+  gap: 1.5rem;
+  min-height: 88px;
 }
 
-.nav-link:hover {
-  color: var(--scsu-yellow) !important;
+.navbar-brand {
+  margin: 0;
+  padding: 0.75rem 0;
 }
 
-/* Logo rules (no distortion) */
 .scsu-logo {
-  height: 40px;
+  display: block;
   width: auto;
+  height: 56px;
+  max-width: min(360px, 58vw);
   object-fit: contain;
-  display: inline-block;
 }
 
-/* =========================
-   CARDS (ACADEMIC STYLE)
-   ========================= */
+.navbar-nav {
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.nav-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.8rem;
+  color: var(--scsu-white) !important;
+  font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
+  font-size: inherit;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  border-bottom: 3px solid transparent;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+  color: var(--scsu-white) !important;
+  border-bottom-color: var(--scsu-gold);
+}
+
+main.container {
+  max-width: 1040px;
+}
+
 .card {
-  border: none;
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border: 1px solid var(--scsu-border);
+  border-radius: 6px;
+  box-shadow: 0 10px 26px rgba(0, 51, 153, 0.1);
 }
 
-/* =========================
-   PROFILE AVATAR
-   ========================= */
+.row.justify-content-center > .col-md-8 > .card:first-child {
+  border-top: 8px solid var(--scsu-blue);
+  background: var(--scsu-white);
+}
+
 .profile-avatar {
-  border: 3px solid var(--scsu-blue);
-  padding: 2px;
-  background: white;
-  font-family: Cochin, Georgia, "Times New Roman", Times, serif;
+  width: 120px;
+  height: 120px;
+  border: 4px solid var(--scsu-blue);
+  padding: 3px;
+  background: var(--scsu-white);
+  object-fit: cover;
 }
 
-/* =========================
-   BUTTONS (SCSU STYLE)
-   ========================= */
-.btn-primary {
+.profile-name {
+  margin-top: 1rem;
+  margin-bottom: 0.25rem;
+  color: var(--scsu-blue);
+  font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+h3,
+h4,
+h5 {
+  color: var(--scsu-blue);
+  font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+h4 {
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid var(--scsu-gold);
+}
+
+.text-muted {
+  color: #4d5563 !important;
+}
+
+.profile-panel {
+  min-height: 100%;
+  border-left: 6px solid var(--scsu-blue);
+  background: var(--scsu-white);
+}
+
+.profile-panel h5 {
+  margin-bottom: 0.75rem;
+}
+
+.profile-panel h5::after {
+  content: "";
+  display: block;
+  width: 48px;
+  height: 4px;
+  margin-top: 0.55rem;
+  background: var(--scsu-cyan);
+}
+
+.badge {
+  color: var(--scsu-blue);
+  background: rgba(0, 173, 235, 0.16);
+  border: 1px solid rgba(0, 51, 153, 0.22);
+  border-radius: 999px;
+  font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.btn-primary,
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+  color: var(--scsu-white);
   background-color: var(--scsu-blue);
   border-color: var(--scsu-blue);
 }
 
-.btn-primary:hover {
-  background-color: #002a80;
+.btn-primary:hover,
+.btn-primary:focus {
+  color: var(--scsu-white);
+  background-color: #00256f;
+  border-color: #00256f;
 }
 
 .btn-outline-primary {
   color: var(--scsu-blue);
   border-color: var(--scsu-blue);
+  font-weight: 700;
 }
 
-.btn-outline-primary:hover {
-  background-color: var(--scsu-blue);
-  color: white;
+.form-control {
+  border-color: var(--scsu-border);
+  border-radius: 4px;
 }
 
-/* =========================
-   BADGES (INTERESTS)
-   ========================= */
-.badge {
-  background-color: var(--scsu-cyan);
-  font-weight: 500;
+.form-control:focus {
+  border-color: var(--scsu-blue);
+  box-shadow: 0 0 0 0.2rem rgba(0, 51, 153, 0.18);
 }
 
-/* =========================
-   TYPOGRAPHY
-   ========================= */
-h3, h4, h5 {
-  color: var(--scsu-blue);
-  font-weight: 600;
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--scsu-gold);
+  outline-offset: 3px;
 }
 
-.text-muted {
-  color: var(--scsu-gray) !important;
-}
+@media (max-width: 767px) {
+  .scsu-navbar .container {
+    align-items: flex-start;
+    min-height: auto;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
 
-/* =========================
-   ACCESSIBILITY FOCUS
-   ========================= */
-a:focus,
-button:focus,
-input:focus {
-  outline: 3px solid var(--scsu-yellow);
-  outline-offset: 2px;
-}
+  .scsu-logo {
+    height: 44px;
+    max-width: 72vw;
+  }
 
-/* =========================
-   PROFILE PANEL STYLE
-   ========================= */
-.profile-panel {
-  border: 2px solid #003399;   /* SCSU blue border */
-  border-radius: 12px;
-  background-color: #ffffff;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* subtle hover effect */
-.profile-panel:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 51, 153, 0.12);
-}
-
-/* section headings */
-.profile-panel h5 {
-  color: #003399;
-  font-weight: 600;
-}
-
-/* ensure equal height cards */
-.h-100 {
-  height: 100%;
+  .navbar-nav {
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-start;
+  }
 }

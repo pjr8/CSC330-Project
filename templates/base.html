@@ -16,16 +16,15 @@
   <div class="container">
 
     <!-- Logo + Brand -->
-    <a class="navbar-brand d-flex align-items-center" href="{{ url_for('profile') }}">
-      <img src="{{ url_for('static', filename='img/scsu-logo.png') }}"
-           alt="SCSU"
+    <a class="navbar-brand d-flex align-items-center" href="{{ url_for('profile') }}" aria-label="Southern Connecticut State University profile home">
+      <img src="{{ url_for('static', filename='images/scsu-logo.png') }}"
+           alt="Southern Connecticut State University"
            class="scsu-logo me-2">
-      Study Group Portal
     </a>
 
     <!-- Navigation -->
     <div class="navbar-nav ms-auto">
-      <a class="nav-link" href="{{ url_for('profile') }}">Home</a>
+      <a class="nav-link" href="{{ url_for('home') }}">Home</a>
       <a class="nav-link" href="{{ url_for('profile') }}">Profile</a>
     </div>
 
