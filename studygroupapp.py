@@ -16,6 +16,16 @@ def create_app() -> Flask:
         major="Computer Science",
     )
 
+    profile_user = {
+        "firstName": "Bianka",
+        "lastName": "Edouard",
+        "major": "Computer Science",
+        "bio": "Student interested in web development, Python, and building useful campus tools.",
+        "scsuEmail": "student@example.com",
+        "interests": ["Flask", "UI design", "algorithms"],
+        "contactInfo": "",
+    }
+
     sample_groups = [
         StudyGroup(
             title="CSC 330 Study Group",
@@ -59,15 +69,39 @@ def create_app() -> Flask:
 
     @app.route("/create")
     def create_group():
-        return "Create Group Page Coming Soon"
+        return redirect(url_for("study_groups.listings"))
 
     @app.route("/browse")
     def browse_groups():
-        return "Browse Groups Page Coming Soon"
+        return redirect(url_for("study_groups.listings"))
 
     @app.route("/messages")
     def messages():
         return render_template("messages.html")
+
+    @app.route("/profile")
+    def profile():
+        return render_template("profile.html", user=profile_user)
+
+    @app.route("/update-profile", methods=["GET", "POST"])
+    def update_profile():
+        if request.method == "POST":
+            profile_user["firstName"] = request.form.get("firstName")
+            profile_user["lastName"] = request.form.get("lastName")
+            profile_user["major"] = request.form.get("major")
+            profile_user["bio"] = request.form.get("bio")
+            profile_user["contactInfo"] = request.form.get("contactInfo")
+
+            interests = request.form.get("interests")
+            profile_user["interests"] = [
+                interest.strip()
+                for interest in interests.split(",")
+                if interest.strip()
+            ] if interests else []
+
+            return redirect(url_for("profile"))
+
+        return render_template("update_profile.html", user=profile_user)
 
     @app.route("/register")
     def register():
