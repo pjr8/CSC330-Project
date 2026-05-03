@@ -66,6 +66,10 @@ def create_app() -> Flask:
     def messages():
         return render_template("messages.html")
 
+    @app.route("/register")
+    def register():
+        return render_template("register.html")
+
     return app
 
 
