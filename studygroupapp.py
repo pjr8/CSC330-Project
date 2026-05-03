@@ -1,9 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for
 from models import User, StudyGroup
 
+from study_groups import study_groups_bp
+
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    app.register_blueprint(study_groups_bp)
 
     test_user = User(
         scsuEmail="test@southernct.edu",
