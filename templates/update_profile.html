@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Update Profile{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+  <div class="col-md-6">
+
+    <div class="card p-4">
+
+      <h4 class="mb-3">Update Profile</h4>
+
+      <form method="POST">
+
+        <input class="form-control mb-2" name="firstName" placeholder="First Name" value="{{ user.firstName }}">
+        <input class="form-control mb-2" name="lastName" placeholder="Last Name" value="{{ user.lastName }}">
+        <input class="form-control mb-2" name="major" placeholder="Major" value="{{ user.major }}">
+
+        <textarea class="form-control mb-2" name="bio">{{ user.bio }}</textarea>
+
+        <input class="form-control mb-3"
+               name="interests"
+               placeholder="Interests (comma separated)"
+               value="{{ user.interests | join(', ') }}">
+
+         <!-- CONTACT FIELD (NEW) -->
+        <textarea class="form-control mb-3"
+                  name="contactInfo"
+                  placeholder="Best ways to reach you (email, discord, etc.)">{{ user.contactInfo }}</textarea>
+
+        <button class="btn btn-primary w-100">
+          Save Changes
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

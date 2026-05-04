@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCSU Study Group Scheduler - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="site-header" aria-label="SCSU Study Group Scheduler">
+        <div class="site-header__inner">
+            <a class="brand-logo" href="/home" aria-label="Southern Connecticut State University Study Group Scheduler home">
+                <img
+                    src="{{ url_for('static', filename='images/scsu-logo.png') }}"
+                    alt="Southern Connecticut State University"
+                    class="brand-logo__image">
+            </a>
+
+            <nav class="top-nav" aria-label="Primary navigation">
+                <a class="top-nav__link" href="/profile">Profile</a>
+                <a class="top-nav__link top-nav__link--quiet" href="/">Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main-content" class="home-shell">
+        <section class="home-hero" aria-labelledby="home-title">
+            <div class="home-hero__content">
+                <p class="eyebrow">SCSU Study Group Scheduler</p>
+                <h1 id="home-title">Welcome, {{ user.firstName }}</h1>
+                <p class="home-hero__copy">
+                    Find classmates, organize course study sessions, and keep your academic work moving with a clear Southern Connecticut State University workspace.
+                </p>
+            </div>
+
+            <aside class="student-card" aria-label="Student profile">
+                <p class="student-card__label">Signed in as</p>
+                <strong>{{ user.firstName }}</strong>
+                <span>{{ user.major }}</span>
+            </aside>
+        </section>
+
+        <section class="quick-actions" aria-labelledby="navigation-title">
+            <div class="section-heading">
+                <p class="eyebrow">Navigation</p>
+                <h2 id="navigation-title">Plan your next study session</h2>
+            </div>
+
+            <div class="action-grid">
+                <a class="action-card" href="{{ url_for('create_group') }}">
+                    <span class="action-card__kicker">Start</span>
+                    <strong>Create Group</strong>
+                    <span>Set up a focused session for your course, project, or exam review.</span>
+                </a>
+
+                <a class="action-card" href="/browse">
+                    <span class="action-card__kicker">Discover</span>
+                    <strong>Browse Groups</strong>
+                    <span>Review available study groups and join one that fits your schedule.</span>
+                </a>
+
+                <a class="action-card" href="/messages">
+                    <span class="action-card__kicker">Connect</span>
+                    <strong>Messages</strong>
+                    <span>Coordinate meeting details and keep group communication organized.</span>
+                </a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
