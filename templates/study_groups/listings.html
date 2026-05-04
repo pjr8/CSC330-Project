@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Study Group Listings | Southern Connecticut State University</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/study_groups/listings.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#available-groups">Skip to available groups</a>
+
+    <header class="site-header">
+        <div class="site-header__inner">
+            <div class="brand-lockup" aria-label="Southern Connecticut State University Study Groups">
+                <div class="brand-lockup__mark" aria-hidden="true">SC</div>
+                <div>
+                    <p class="brand-lockup__kicker">Southern Connecticut State University</p>
+                    <a class="brand-lockup__wordmark" href="{{ url_for('home') }}">Study Groups</a>
+                </div>
+            </div>
+
+            <nav class="top-nav" aria-label="Primary">
+                <a class="top-nav__link" href="/profile">Profile</a>
+                <a class="top-nav__link top-nav__link--quiet" href="/">Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <section class="page-intro" aria-labelledby="page-title">
+            <div>
+                <p class="eyebrow">Current semester</p>
+                <h1 id="page-title">Available Study Groups</h1>
+                <p class="page-intro__copy">
+                    Open peer-led sessions for Southern students, organized for quick review and enrollment.
+                </p>
+            </div>
+
+            <div class="page-status" aria-label="Listings summary">
+                <div>
+                    <span class="page-status__value">{{ available_groups|length }}</span>
+                    <span class="page-status__label">Open groups</span>
+                </div>
+                <div>
+                    <span class="page-status__value">{{ favorite_groups|length }}</span>
+                    <span class="page-status__label">Saved</span>
+                </div>
+                <div>
+                    <span class="page-status__value">Live</span>
+                    <span class="page-status__label">Preview mode</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="listings-layout">
+            <section class="listings-main" aria-labelledby="available-groups">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Directory</p>
+                        <h2 id="available-groups">Open Study Groups</h2>
+                    </div>
+                    <p class="signed-in">Signed in as <strong>{{ current_user.getFullName() }}</strong></p>
+                </div>
+
+                <div class="group-list">
+                    {% for group in available_groups %}
+                        <article class="listing-row{% if group.is_favorited %} listing-row--favorite{% endif %}">
+                            <div class="listing-row__body">
+                                <div class="listing-row__topline">
+                                    <span>{{ group.subject }}</span>
+                                    <span>{{ group.status }}</span>
+                                </div>
+
+                                <div>
+                                    <h3>{{ group.title }}</h3>
+                                    <p class="listing-row__description">{{ group.description }}</p>
+                                </div>
+
+                                <dl class="listing-facts" aria-label="Study group details">
+                                    <div>
+                                        <dt>Time</dt>
+                                        <dd>{{ group.meeting_time }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Location</dt>
+                                        <dd>{{ group.location }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Format</dt>
+                                        <dd>{{ group.modality }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Capacity</dt>
+                                        <dd>{{ group.capacity }}</dd>
+                                    </div>
+                                </dl>
+                            </div>
+
+                            <div class="listing-row__aside">
+                                <div>
+                                    <span class="favorite-mark{% if group.is_favorited %} favorite-mark--active{% endif %}">
+                                        {% if group.is_favorited %}Saved{% else %}Not saved{% endif %}
+                                    </span>
+                                    <p class="host-line">Hosted by {{ group.creator_name }}</p>
+                                </div>
+                                <div class="group-actions">
+                                    <button class="button button--primary" type="button">Join</button>
+                                    <button class="button button--text" type="button">Details</button>
+                                </div>
+                            </div>
+                        </article>
+                    {% else %}
+                        <p class="empty-state">No open study groups are available right now.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <aside class="favorites-rail" aria-labelledby="favorites-title">
+                <div class="section-heading section-heading--compact">
+                    <div>
+                        <p class="eyebrow">Saved</p>
+                        <h2 id="favorites-title">Favorites</h2>
+                    </div>
+                </div>
+
+                <div class="favorites-list">
+                    {% for group in favorite_groups %}
+                        <article class="favorite-item">
+                            <div>
+                                <p>{{ group.subject }}</p>
+                                <h3>{{ group.title }}</h3>
+                            </div>
+                            <span>{{ group.meeting_time }}</span>
+                            <span>{{ group.location }}</span>
+                        </article>
+                    {% else %}
+                        <p class="empty-state empty-state--panel">No favorites have been saved yet.</p>
+                    {% endfor %}
+                </div>
+            </aside>
+        </div>
+    </main>
+</body>
+</html>
