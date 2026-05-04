@@ -24,6 +24,7 @@ class User:
     interests: list[str] = field(default_factory=list)
     bio: str = ""
     profileImageUrl: str = ""
+    contactInfo: str = ""
     status: str = "active"
     role: str = "student"
     createdAt: DateTime = field(default_factory=datetime.now)
@@ -56,6 +57,7 @@ class User:
             "interests",
             "bio",
             "profileImageUrl",
+            "contactInfo",
             "status",
             "role",
         }
