@@ -1,11 +1,13 @@
 from flask import Flask, redirect, render_template, request, url_for
 
+from accounts import accounts_bp
 from models import StudyGroup, User
 from study_groups import study_groups_bp
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    app.register_blueprint(accounts_bp)
     app.register_blueprint(study_groups_bp)
 
     test_user = User(
