@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Account | Southern Connecticut State University Study Groups</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accounts/signup.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#signup-form">Skip to signup form</a>
+
+    <header class="site-header">
+        <div class="site-header__inner">
+            <div class="brand-lockup" aria-label="Southern Connecticut State University Study Groups">
+                <div class="brand-lockup__mark" aria-hidden="true">SC</div>
+                <div>
+                    <p class="brand-lockup__kicker">Southern Connecticut State University</p>
+                    <a class="brand-lockup__wordmark" href="{{ url_for('index') }}">Study Groups</a>
+                </div>
+            </div>
+
+            <nav class="top-nav" aria-label="Primary">
+                <a class="top-nav__link" href="{{ url_for('study_groups.listings') }}">Listings</a>
+                <a class="top-nav__link top-nav__link--active" href="{{ url_for('accounts.signup') }}">Sign Up</a>
+                <a class="top-nav__link" href="#">Messages</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <section class="page-intro" aria-labelledby="page-title">
+            <div>
+                <p class="eyebrow">Account access</p>
+                <h1 id="page-title">Create Your Account</h1>
+                <p class="page-intro__copy">
+                    Register with your Southern email and profile details to prepare for campus study group tools.
+                </p>
+            </div>
+
+            <div class="page-status" aria-label="Signup requirements summary">
+                <div>
+                    <span class="page-status__value">SCSU</span>
+                    <span class="page-status__label">Email required</span>
+                </div>
+                <div>
+                    <span class="page-status__value">Full</span>
+                    <span class="page-status__label">Profile setup</span>
+                </div>
+                <div>
+                    <span class="page-status__value">/home</span>
+                    <span class="page-status__label">Next step</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="signup-layout">
+            <section class="signup-main" aria-labelledby="signup-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">New student profile</p>
+                        <h2 id="signup-heading">Registration Details</h2>
+                    </div>
+                    <p class="required-note">All fields are required.</p>
+                </div>
+
+                {% if error_summary %}
+                    <div class="error-summary" role="alert" aria-labelledby="error-summary-title">
+                        <h3 id="error-summary-title">Review your signup details</h3>
+                        <ul>
+                            {% for message in error_summary %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <form id="signup-form" class="signup-form" method="post" novalidate>
+                    <div class="field-grid">
+                        <div class="field{% if errors.get('firstName') %} field--error{% endif %}">
+                            <label for="firstName">First name</label>
+                            <input
+                                id="firstName"
+                                name="firstName"
+                                type="text"
+                                autocomplete="given-name"
+                                value="{{ form_data.firstName }}"
+                                required
+                                {% if errors.get('firstName') %}aria-invalid="true" aria-describedby="firstName-error"{% endif %}
+                            >
+                            {% if errors.get('firstName') %}
+                                <p class="field-error" id="firstName-error">{{ errors.firstName }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('lastName') %} field--error{% endif %}">
+                            <label for="lastName">Last name</label>
+                            <input
+                                id="lastName"
+                                name="lastName"
+                                type="text"
+                                autocomplete="family-name"
+                                value="{{ form_data.lastName }}"
+                                required
+                                {% if errors.get('lastName') %}aria-invalid="true" aria-describedby="lastName-error"{% endif %}
+                            >
+                            {% if errors.get('lastName') %}
+                                <p class="field-error" id="lastName-error">{{ errors.lastName }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field field--wide{% if errors.get('scsuEmail') %} field--error{% endif %}">
+                            <label for="scsuEmail">SCSU email</label>
+                            <input
+                                id="scsuEmail"
+                                name="scsuEmail"
+                                type="email"
+                                autocomplete="email"
+                                inputmode="email"
+                                placeholder="name@southernct.edu"
+                                value="{{ form_data.scsuEmail }}"
+                                required
+                                {% if errors.get('scsuEmail') %}aria-invalid="true" aria-describedby="scsuEmail-error"{% endif %}
+                            >
+                            {% if errors.get('scsuEmail') %}
+                                <p class="field-error" id="scsuEmail-error">{{ errors.scsuEmail }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('password') %} field--error{% endif %}">
+                            <label for="password">Password</label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                autocomplete="new-password"
+                                required
+                                {% if errors.get('password') %}aria-invalid="true" aria-describedby="password-error"{% endif %}
+                            >
+                            {% if errors.get('password') %}
+                                <p class="field-error" id="password-error">{{ errors.password }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('confirmPassword') %} field--error{% endif %}">
+                            <label for="confirmPassword">Confirm password</label>
+                            <input
+                                id="confirmPassword"
+                                name="confirmPassword"
+                                type="password"
+                                autocomplete="new-password"
+                                required
+                                {% if errors.get('confirmPassword') %}aria-invalid="true" aria-describedby="confirmPassword-error"{% endif %}
+                            >
+                            {% if errors.get('confirmPassword') %}
+                                <p class="field-error" id="confirmPassword-error">{{ errors.confirmPassword }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field field--wide{% if errors.get('major') %} field--error{% endif %}">
+                            <label for="major">Major</label>
+                            <input
+                                id="major"
+                                name="major"
+                                type="text"
+                                autocomplete="organization-title"
+                                value="{{ form_data.major }}"
+                                required
+                                {% if errors.get('major') %}aria-invalid="true" aria-describedby="major-error"{% endif %}
+                            >
+                            {% if errors.get('major') %}
+                                <p class="field-error" id="major-error">{{ errors.major }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field field--wide{% if errors.get('interests') %} field--error{% endif %}">
+                            <label for="interests">Interests</label>
+                            <input
+                                id="interests"
+                                name="interests"
+                                type="text"
+                                placeholder="Algorithms, lab review, research writing"
+                                value="{{ form_data.interests }}"
+                                required
+                                {% if errors.get('interests') %}aria-invalid="true" aria-describedby="interests-error interests-hint"{% else %}aria-describedby="interests-hint"{% endif %}
+                            >
+                            <p class="field-hint" id="interests-hint">Separate interests with commas.</p>
+                            {% if errors.get('interests') %}
+                                <p class="field-error" id="interests-error">{{ errors.interests }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field field--wide{% if errors.get('bio') %} field--error{% endif %}">
+                            <label for="bio">Bio</label>
+                            <textarea
+                                id="bio"
+                                name="bio"
+                                rows="5"
+                                required
+                                {% if errors.get('bio') %}aria-invalid="true" aria-describedby="bio-error"{% endif %}
+                            >{{ form_data.bio }}</textarea>
+                            {% if errors.get('bio') %}
+                                <p class="field-error" id="bio-error">{{ errors.bio }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="button button--primary" type="submit">Create account</button>
+                        <a class="button button--text" href="{{ url_for('study_groups.listings') }}">View listings</a>
+                    </div>
+                </form>
+            </section>
+
+            <aside class="signup-rail" aria-labelledby="requirements-title">
+                <div class="section-heading section-heading--compact">
+                    <div>
+                        <p class="eyebrow">Access rules</p>
+                        <h2 id="requirements-title">Requirements</h2>
+                    </div>
+                </div>
+
+                <dl class="requirement-list">
+                    <div>
+                        <dt>Email domain</dt>
+                        <dd>Use an exact <strong>@southernct.edu</strong> address.</dd>
+                    </div>
+                    <div>
+                        <dt>Profile</dt>
+                        <dd>Provide your name, major, interests, and bio before entering the app.</dd>
+                    </div>
+                    <div>
+                        <dt>After signup</dt>
+                        <dd>The account is created and sent to <strong>/home</strong> for the next app flow.</dd>
+                    </div>
+                </dl>
+            </aside>
+        </div>
+    </main>
+</body>
+</html>
