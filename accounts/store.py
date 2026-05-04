@@ -3,6 +3,10 @@ from __future__ import annotations
 from models import User
 
 
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
 class InMemoryAccountStore:
     """Small account store boundary that can be replaced by SQLite later."""
 
@@ -10,10 +14,10 @@ class InMemoryAccountStore:
         self._users_by_email: dict[str, User] = {}
 
     def find_by_email(self, email: str) -> User | None:
-        return self._users_by_email.get(self.normalize_email(email))
+        return self._users_by_email.get(normalize_email(email))
 
     def create_user(self, user: User) -> User:
-        email = self.normalize_email(user.scsuEmail)
+        email = normalize_email(user.scsuEmail)
         if email in self._users_by_email:
             raise ValueError("duplicate_email")
 
@@ -23,4 +27,4 @@ class InMemoryAccountStore:
 
     @staticmethod
     def normalize_email(email: str) -> str:
-        return email.strip().lower()
+        return normalize_email(email)

@@ -36,7 +36,7 @@ def study_group_view_model(
         "max_members": group.maxMembers,
         "status": group.status.title(),
         "creator_name": group.creator.getFullName() if group.creator else "Student host",
-        "is_favorited": _contains_identity(group.favoritedBy, current_user),
+        "is_favorited": _contains_user(group.favoritedBy, current_user),
         "meeting_link": group.meetingLink,
         "has_available_seat": group.hasAvailableSeat(),
     }
@@ -63,5 +63,5 @@ def _format_clock_time(value: datetime) -> str:
     return value.strftime("%I:%M %p").lstrip("0")
 
 
-def _contains_identity(items: list[object], target: object) -> bool:
-    return any(item is target for item in items)
+def _contains_user(items: list[User], target: User) -> bool:
+    return any(user.id == target.id for user in items)

@@ -1,65 +1,43 @@
-from flask import Flask, redirect, render_template, request, url_for
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+from flask import Flask, redirect, render_template, request, session, url_for
 
 from accounts import accounts_bp
-from models import StudyGroup, User
+from app_store import SQLiteStudyGroupStore
 from study_groups import study_groups_bp
 
 
-def create_app() -> Flask:
-    app = Flask(__name__)
+def create_app(test_config: dict[str, Any] | None = None) -> Flask:
+    app = Flask(__name__, instance_relative_config=True)
+    app.config.from_mapping(
+        SECRET_KEY="dev",
+        DATABASE=str(Path(app.instance_path) / "studygroups.sqlite3"),
+    )
+
+    if test_config is not None:
+        app.config.update(test_config)
+
+    store = app.config.get("DATA_STORE")
+    if store is None:
+        store = SQLiteStudyGroupStore(app.config["DATABASE"])
+        store.initialize()
+        app.config["DATA_STORE"] = store
+
+    app.config.setdefault("ACCOUNT_STORE", store)
     app.register_blueprint(accounts_bp)
     app.register_blueprint(study_groups_bp)
 
-    test_user = User(
-        scsuEmail="test@southernct.edu",
-        passwordHash="1234",
-        firstName="Test",
-        lastName="User",
-        major="Computer Science",
-    )
+    def data_store() -> SQLiteStudyGroupStore:
+        return app.config["DATA_STORE"]
 
-    profile_user = {
-        "firstName": "Bianka",
-        "lastName": "Edouard",
-        "major": "Computer Science",
-        "bio": (
-            "Student interested in web development, Python, and building useful "
-            "campus tools."
-        ),
-        "scsuEmail": "student@example.com",
-        "interests": ["Flask", "UI design", "algorithms"],
-        "contactInfo": "",
-    }
-
-    sample_groups = [
-        StudyGroup(
-            title="CSC 330 Study Group",
-            subject="Software Engineering",
-            description="Reviewing project requirements.",
-        ),
-        StudyGroup(
-            title="CSC 212 Study Group",
-            subject="Data Structures",
-            description="Practice with linked lists and sorting.",
-        ),
-        StudyGroup(
-            title="Networking Exam Prep",
-            subject="Computer Networks",
-            description="Reviewing IP, subnetting, and routing.",
-        ),
-    ]
-
-    messages_dict = {
-        "John Smith": [
-            {"sender": "John Smith", "text": "Hey, are we meeting today?"},
-            {"sender": "You", "text": "Yes, at 3 PM in the library."},
-        ],
-        "Sarah Lee": [],
-        "Group Chat": [],
-    }
+    def current_user():
+        return data_store().user_for_session(session.get("user_id"))
 
     @app.route("/", methods=["GET", "POST"])
-    def login():
+    def index():
         if request.method == "POST":
             email = request.form.get("email", "").strip()
             password = request.form.get("password", "").strip()
@@ -67,10 +45,12 @@ def create_app() -> Flask:
             if not email or not password:
                 return render_template("login.html", error="Please fill out all fields.")
 
-            if not email.endswith("@southernct.edu"):
+            if not email.lower().endswith("@southernct.edu"):
                 return render_template("login.html", error="Please use your SCSU email.")
 
-            if email == test_user.scsuEmail and password == test_user.passwordHash:
+            user = data_store().authenticate_user(email, password)
+            if user is not None:
+                session["user_id"] = str(user.id)
                 return redirect(url_for("home"))
 
             return render_template("login.html", error="Invalid email or password.")
@@ -79,7 +59,9 @@ def create_app() -> Flask:
 
     @app.route("/home")
     def home():
-        return render_template("home.html", user=test_user, groups=sample_groups)
+        user = current_user()
+        _, groups = data_store().study_group_listing_data(str(user.id))
+        return render_template("home.html", user=user, groups=groups[:3])
 
     @app.route("/create")
     def create_group():
@@ -91,55 +73,66 @@ def create_app() -> Flask:
 
     @app.route("/messages", methods=["GET", "POST"])
     def messages():
-        user = request.args.get("user", "John Smith")
-        messages_dict.setdefault(user, [])
+        store = data_store()
+        user = current_user()
+        conversations = store.list_conversations()
+        conversation_name = request.args.get("user") or (
+            conversations[0] if conversations else "John Smith"
+        )
 
         if request.method == "POST":
-            new_message = request.form.get("message")
+            store.add_outgoing_message(
+                conversation_name,
+                request.form.get("message", ""),
+                str(user.id),
+            )
+            return redirect(url_for("messages", user=conversation_name))
 
-            if new_message:
-                messages_dict[user].append(
-                    {
-                        "sender": "You",
-                        "text": new_message,
-                    }
-                )
-
-            return redirect(url_for("messages", user=user))
+        if conversation_name not in conversations:
+            conversations.append(conversation_name)
 
         return render_template(
             "messages.html",
-            messages=messages_dict[user],
-            current_user=user,
+            messages=store.messages_for_conversation(conversation_name, str(user.id)),
+            conversations=conversations,
+            current_user=conversation_name,
         )
 
     @app.route("/profile")
     def profile():
-        return render_template("profile.html", user=profile_user)
+        return render_template("profile.html", user=current_user())
 
     @app.route("/update-profile", methods=["GET", "POST"])
     def update_profile():
+        user = current_user()
+
         if request.method == "POST":
-            profile_user["firstName"] = request.form.get("firstName")
-            profile_user["lastName"] = request.form.get("lastName")
-            profile_user["major"] = request.form.get("major")
-            profile_user["bio"] = request.form.get("bio")
-            profile_user["contactInfo"] = request.form.get("contactInfo")
-
-            interests = request.form.get("interests")
-            profile_user["interests"] = [
-                interest.strip()
-                for interest in interests.split(",")
-                if interest.strip()
-            ] if interests else []
-
+            interests = request.form.get("interests", "")
+            data_store().update_user_profile(
+                user.id,
+                first_name=request.form.get("firstName", "").strip(),
+                last_name=request.form.get("lastName", "").strip(),
+                major=request.form.get("major", "").strip(),
+                bio=request.form.get("bio", "").strip(),
+                contact_info=request.form.get("contactInfo", "").strip(),
+                interests=[
+                    interest.strip()
+                    for interest in interests.split(",")
+                    if interest.strip()
+                ],
+            )
             return redirect(url_for("profile"))
 
-        return render_template("update_profile.html", user=profile_user)
+        return render_template("update_profile.html", user=user)
 
     @app.route("/register")
     def register():
-        return render_template("register.html")
+        return redirect(url_for("accounts.signup"))
+
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        return redirect(url_for("index"))
 
     return app
 

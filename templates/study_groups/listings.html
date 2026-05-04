@@ -20,8 +20,9 @@
             </div>
 
             <nav class="top-nav" aria-label="Primary">
-                <a class="top-nav__link" href="/profile">Profile</a>
-                <a class="top-nav__link top-nav__link--quiet" href="/">Logout</a>
+                <a class="top-nav__link" href="{{ url_for('profile') }}">Profile</a>
+                <a class="top-nav__link" href="{{ url_for('messages') }}">Messages</a>
+                <a class="top-nav__link top-nav__link--quiet" href="{{ url_for('logout') }}">Logout</a>
             </nav>
         </div>
     </header>

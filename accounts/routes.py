@@ -3,12 +3,12 @@ from __future__ import annotations
 import re
 from typing import Protocol
 
-from flask import Blueprint, current_app, redirect, render_template, request
+from flask import Blueprint, current_app, redirect, render_template, request, session
 from werkzeug.security import generate_password_hash
 
 from models import User
 
-from .store import InMemoryAccountStore
+from .store import InMemoryAccountStore, normalize_email
 
 
 SCSU_EMAIL_PATTERN = re.compile(r"^[^@\s]+@southernct\.edu$")
@@ -44,9 +44,7 @@ def signup() -> str:
 
         if not errors:
             store = _account_store()
-            normalized_email = InMemoryAccountStore.normalize_email(
-                request.form.get("scsuEmail", "")
-            )
+            normalized_email = normalize_email(request.form.get("scsuEmail", ""))
 
             if store.find_by_email(normalized_email) is not None:
                 errors["scsuEmail"] = "An account with this SCSU email already exists."
@@ -62,7 +60,8 @@ def signup() -> str:
                     interests=_parse_interests(form_data["interests"]),
                     bio=form_data["bio"],
                 )
-                store.create_user(user)
+                created_user = store.create_user(user)
+                session["user_id"] = str(created_user.id)
                 return redirect("/home")
 
         return render_template(
@@ -91,7 +90,7 @@ def _validate_signup_form() -> dict[str, str]:
         if not request.form.get(field_name, "").strip():
             errors[field_name] = "Please complete all required fields."
 
-    email = InMemoryAccountStore.normalize_email(request.form.get("scsuEmail", ""))
+    email = normalize_email(request.form.get("scsuEmail", ""))
     if email and SCSU_EMAIL_PATTERN.fullmatch(email) is None:
         errors["scsuEmail"] = "Use a valid @southernct.edu email address."
 
@@ -107,9 +106,7 @@ def _sticky_form_data() -> dict[str, str]:
     return {
         "firstName": request.form.get("firstName", "").strip(),
         "lastName": request.form.get("lastName", "").strip(),
-        "scsuEmail": InMemoryAccountStore.normalize_email(
-            request.form.get("scsuEmail", "")
-        ),
+        "scsuEmail": normalize_email(request.form.get("scsuEmail", "")),
         "major": request.form.get("major", "").strip(),
         "interests": request.form.get("interests", "").strip(),
         "bio": request.form.get("bio", "").strip(),

@@ -1,16 +1,15 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, current_app, render_template, session
 
-from .mock_data import StudyGroupMockData
 from .view_models import study_group_view_model
 
 
 study_groups_bp = Blueprint("study_groups", __name__)
-study_group_mock_data = StudyGroupMockData()
 
 
 @study_groups_bp.route("/listings")
 def listings() -> str:
-    current_user, study_groups = study_group_mock_data.build()
+    store = current_app.config["DATA_STORE"]
+    current_user, study_groups = store.study_group_listing_data(session.get("user_id"))
     available_groups = [
         group
         for group in study_groups
