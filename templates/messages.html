@@ -39,11 +39,14 @@
         }
 
         .chat-user {
+            display: block;
             padding: 12px;
             margin-bottom: 5px;
             background: white;
             border-radius: 5px;
             cursor: pointer;
+            color: #222;
+            text-decoration: none;
         }
 
         .chat-user.active {
@@ -56,6 +59,13 @@
             width: 70%;
             display: flex;
             flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #ccc;
+            font-weight: bold;
+            color: #003399;
         }
 
         .messages {
@@ -79,6 +89,12 @@
 
         .received {
             background: #e6e6e6;
+        }
+
+        .empty-chat {
+            color: #777;
+            text-align: center;
+            margin-top: 30px;
         }
 
         /* INPUT */
@@ -124,44 +140,47 @@
 
     <!-- SIDEBAR -->
     <div class="sidebar">
-        <a href="/messages?user=John Smith"
-   class="chat-user {% if current_user == 'John Smith' %}active{% endif %}">
-    John Smith
-</a>
+        <a href="/messages?user=John%20Smith"
+           class="chat-user {% if current_user == 'John Smith' %}active{% endif %}">
+            John Smith
+        </a>
 
-<a href="/messages?user=Sarah Lee"
-   class="chat-user {% if current_user == 'Sarah Lee' %}active{% endif %}">
-    Sarah Lee
-</a>
+        <a href="/messages?user=Sarah%20Lee"
+           class="chat-user {% if current_user == 'Sarah Lee' %}active{% endif %}">
+            Sarah Lee
+        </a>
 
-<a href="/messages?user=Group Chat"
-   class="chat-user {% if current_user == 'Group Chat' %}active{% endif %}">
-    Group Chat
-</a>
+        <a href="/messages?user=Group%20Chat"
+           class="chat-user {% if current_user == 'Group Chat' %}active{% endif %}">
+            Group Chat
+        </a>
     </div>
 
     <!-- CHAT -->
     <div class="chat">
+        <div class="chat-header">{{ current_user }}</div>
 
-       <div class="messages">
-    {% for msg in messages %}
-        <div class="message {{ 'sent' if msg.sender == 'You' else 'received' }}">
-            {{ msg.text }}
+        <div class="messages">
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="message {{ 'sent' if msg.sender == 'You' else 'received' }}">
+                        {{ msg.text }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-chat">No messages yet.</div>
+            {% endif %}
         </div>
-    {% endfor %}
-</div>
 
         <form method="POST" class="input-box">
-    <input type="text" name="message" placeholder="Type your message..." required>
-    <button type="submit">Send</button>
-</form>
+            <input type="text" name="message" placeholder="Type your message..." required>
+            <button type="submit">Send</button>
+        </form>
 
     </div>
 </div>
 
-<script>
-
-</script>
+<script></script>
 
 </body>
 </html>
