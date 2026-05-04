@@ -1,29 +1,38 @@
 from flask import Flask, render_template, request, redirect
 
-def create_app() -> Flask:
+def create_app():
     app = Flask(__name__)
 
-    # Temporary message storage
-    messages_list = [
-        {"sender": "John Smith", "text": "Hey, are we meeting today?"},
-        {"sender": "You", "text": "Yes, at 3 PM in the library."}
-    ]
-
-    @app.route("/")
-    def index() -> str:
-        return "Study Group App"
+    # Multi-user chats
+    messages_dict = {
+        "John Smith": [
+            {"sender": "John Smith", "text": "Hey, are we meeting today?"},
+            {"sender": "You", "text": "Yes, at 3 PM in the library."}
+        ],
+        "Sarah Lee": [],
+        "Group Chat": []
+    }
 
     @app.route("/messages", methods=["GET", "POST"])
     def messages():
+        user = request.args.get("user", "John Smith")
+
         if request.method == "POST":
             new_message = request.form.get("message")
 
             if new_message:
-                messages_list.append({"sender": "You", "text": new_message})
+                messages_dict[user].append({
+                    "sender": "You",
+                    "text": new_message
+                })
 
-            return redirect("/messages")
+            return redirect(f"/messages?user={user}")
 
-        return render_template("messages.html", messages=messages_list)
+        return render_template(
+            "messages.html",
+            messages=messages_dict[user],
+            current_user=user
+        )
 
     return app
 
