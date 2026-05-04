@@ -124,41 +124,43 @@
 
     <!-- SIDEBAR -->
     <div class="sidebar">
-        <div class="chat-user active">John Smith</div>
-        <div class="chat-user">Sarah Lee</div>
-        <div class="chat-user">Group Chat</div>
+        <a href="/messages?user=John Smith"
+   class="chat-user {% if current_user == 'John Smith' %}active{% endif %}">
+    John Smith
+</a>
+
+<a href="/messages?user=Sarah Lee"
+   class="chat-user {% if current_user == 'Sarah Lee' %}active{% endif %}">
+    Sarah Lee
+</a>
+
+<a href="/messages?user=Group Chat"
+   class="chat-user {% if current_user == 'Group Chat' %}active{% endif %}">
+    Group Chat
+</a>
     </div>
 
     <!-- CHAT -->
     <div class="chat">
 
-        <div class="messages" id="messages">
-            <div class="message received">Hey, are we meeting today?</div>
-            <div class="message sent">Yes, at 3 PM in the library.</div>
+       <div class="messages">
+    {% for msg in messages %}
+        <div class="message {{ 'sent' if msg.sender == 'You' else 'received' }}">
+            {{ msg.text }}
         </div>
+    {% endfor %}
+</div>
 
-        <div class="input-box">
-            <input type="text" id="msgInput" placeholder="Type your message...">
-            <button onclick="sendMessage()">Send</button>
-        </div>
+        <form method="POST" class="input-box">
+    <input type="text" name="message" placeholder="Type your message..." required>
+    <button type="submit">Send</button>
+</form>
 
     </div>
 </div>
 
 <script>
-function sendMessage() {
-    let input = document.getElementById("msgInput");
-    let text = input.value;
 
-    if (text.trim() === "") return;
-
-    let msg = document.createElement("div");
-    msg.className = "message sent";
-    msg.innerText = text;
-
-    document.getElementById("messages").appendChild(msg);
-    input.value = "";
-}
 </script>
 
 </body>
