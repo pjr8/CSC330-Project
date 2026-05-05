@@ -4,7 +4,7 @@ from models import User, StudyGroup
 from study_groups import study_groups_bp
 
 
-def create_app() -> Flask:
+def create_app():
     app = Flask(__name__)
     app.register_blueprint(study_groups_bp)
 
@@ -44,6 +44,16 @@ def create_app() -> Flask:
         ),
     ]
 
+    # Keep separate threads so the messaging page can switch between users.
+    messages_dict = {
+        "John Smith": [
+            {"sender": "John Smith", "text": "Hey, are we meeting today?"},
+            {"sender": "You", "text": "Yes, at 3 PM in the library."},
+        ],
+        "Sarah Lee": [],
+        "Group Chat": [],
+    }
+
     @app.route("/", methods=["GET", "POST"])
     def login():
         if request.method == "POST":
@@ -75,9 +85,28 @@ def create_app() -> Flask:
     def browse_groups():
         return redirect(url_for("study_groups.listings"))
 
-    @app.route("/messages")
+    @app.route("/messages", methods=["GET", "POST"])
     def messages():
-        return render_template("messages.html")
+        user = request.args.get("user", "John Smith")
+        if user not in messages_dict:
+            user = "John Smith"
+
+        if request.method == "POST":
+            new_message = request.form.get("message", "").strip()
+
+            if new_message:
+                messages_dict[user].append({
+                    "sender": "You",
+                    "text": new_message,
+                })
+
+            return redirect(url_for("messages", user=user))
+
+        return render_template(
+            "messages.html",
+            messages=messages_dict[user],
+            current_user=user,
+        )
 
     @app.route("/profile")
     def profile():
