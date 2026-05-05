@@ -9,6 +9,7 @@ def study_group_view_model(
     active_member_count = sum(
         1 for membership in group.memberships if membership.status == "active"
     )
+    is_member = _is_active_member(group, current_user)
     is_virtual = group.modality.lower() == "virtual"
     is_hybrid = group.modality.lower() == "hybrid"
     location = group.location
@@ -37,8 +38,10 @@ def study_group_view_model(
         "status": group.status.title(),
         "creator_name": group.creator.getFullName() if group.creator else "Student host",
         "is_favorited": _contains_user(group.favoritedBy, current_user),
+        "is_member": is_member,
         "meeting_link": group.meetingLink,
         "has_available_seat": group.hasAvailableSeat(),
+        "can_join": group.hasAvailableSeat() and not is_member,
     }
 
 
@@ -65,3 +68,12 @@ def _format_clock_time(value: datetime) -> str:
 
 def _contains_user(items: list[User], target: User) -> bool:
     return any(user.id == target.id for user in items)
+
+
+def _is_active_member(group: StudyGroup, target: User) -> bool:
+    return any(
+        membership.member is not None
+        and membership.member.id == target.id
+        and membership.status == "active"
+        for membership in group.memberships
+    )
