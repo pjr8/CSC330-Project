@@ -4,7 +4,7 @@ import json
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from uuid import NAMESPACE_URL, UUID, uuid5
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -261,6 +261,129 @@ class SQLiteStudyGroupStore:
                 raise RuntimeError("Current user could not be loaded from SQLite")
 
             return current_user, list(groups.values())
+
+    def create_study_group(
+        self,
+        user_id: str | UUID | None,
+        *,
+        title: str,
+        subject: str,
+        description: str,
+        start_at: datetime | None,
+        end_at: datetime | None,
+        modality: str,
+        location: str,
+        meeting_link: str,
+        max_members: int,
+    ) -> StudyGroup:
+        with self._connect() as conn:
+            creator_id = self._resolve_user_id(conn, user_id)
+            creator_row = conn.execute(
+                "SELECT * FROM users WHERE id = ?",
+                (creator_id,),
+            ).fetchone()
+            if creator_row is None:
+                raise RuntimeError("Study group creator could not be loaded from SQLite")
+
+            creator = self._user_from_row(creator_row)
+            group = StudyGroup(
+                title=title,
+                subject=subject,
+                description=description,
+                startAt=start_at,
+                endAt=end_at,
+                modality=modality,
+                location=location,
+                meetingLink=meeting_link,
+                maxMembers=max_members,
+                creator=creator,
+            )
+            self._insert_study_group(conn, group, ignore_existing=False)
+            self._insert_membership(
+                conn,
+                GroupMembership(member=creator, group=group, role="host"),
+                ignore_existing=False,
+            )
+
+        return group
+
+    def join_study_group(
+        self,
+        user_id: str | UUID | None,
+        group_id: str | UUID,
+    ) -> bool:
+        with self._connect() as conn:
+            member_id = self._resolve_user_id(conn, user_id)
+            group_row = conn.execute(
+                "SELECT * FROM study_groups WHERE id = ?",
+                (str(group_id),),
+            ).fetchone()
+            if group_row is None or group_row["status"] != "open":
+                return False
+
+            existing_membership = conn.execute(
+                """
+                SELECT *
+                FROM group_memberships
+                WHERE member_id = ? AND group_id = ?
+                """,
+                (member_id, str(group_id)),
+            ).fetchone()
+            if (
+                existing_membership is not None
+                and existing_membership["status"] == "active"
+            ):
+                return True
+
+            active_member_count = conn.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM group_memberships
+                WHERE group_id = ? AND status = 'active'
+                """,
+                (str(group_id),),
+            ).fetchone()["count"]
+
+            max_members = group_row["max_members"]
+            if max_members > 0 and active_member_count >= max_members:
+                return False
+
+            joined_at = _format_datetime(datetime.now())
+            if existing_membership is not None:
+                conn.execute(
+                    """
+                    UPDATE group_memberships
+                    SET joined_at = ?,
+                        role = CASE WHEN role = 'host' THEN role ELSE 'member' END,
+                        status = 'active'
+                    WHERE id = ?
+                    """,
+                    (joined_at, existing_membership["id"]),
+                )
+                return True
+
+            conn.execute(
+                """
+                INSERT INTO group_memberships (
+                    id,
+                    member_id,
+                    group_id,
+                    joined_at,
+                    role,
+                    status
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(uuid4()),
+                    member_id,
+                    str(group_id),
+                    joined_at,
+                    "member",
+                    "active",
+                ),
+            )
+            return True
 
     def list_conversations(self) -> list[str]:
         with self._connect() as conn:

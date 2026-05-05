@@ -105,7 +105,15 @@
                                     <p class="host-line">Hosted by {{ group.creator_name }}</p>
                                 </div>
                                 <div class="group-actions">
-                                    <button class="button button--primary" type="button">Join</button>
+                                    {% if group.is_member %}
+                                        <span class="button button--joined">Joined</span>
+                                    {% elif group.can_join %}
+                                        <form class="join-form" method="post" action="{{ url_for('study_groups.join_group', group_id=group.id) }}">
+                                            <button class="button button--primary" type="submit">Join</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="button button--disabled">Full</span>
+                                    {% endif %}
                                     <button class="button button--text" type="button">Details</button>
                                 </div>
                             </div>

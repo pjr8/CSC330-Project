@@ -375,8 +375,20 @@ dd {
     gap: 0.45rem;
 }
 
+.join-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.join-form .button {
+    width: 100%;
+}
+
 .button {
     min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 4px;
     padding: 0.45rem 0.75rem;
     border: 1px solid var(--reflex-blue);
@@ -401,6 +413,18 @@ dd {
 .button--text:hover,
 .button--text:focus-visible {
     background: var(--surface-blue);
+}
+
+.button--joined {
+    background: var(--surface-blue);
+    color: var(--reflex-blue);
+    border-color: #c7ddfb;
+}
+
+.button--disabled {
+    background: #f4f6f9;
+    color: var(--gray);
+    border-color: var(--line);
 }
 
 .favorites-rail {
@@ -539,6 +563,10 @@ dd {
     .group-actions {
         width: 100%;
         justify-content: stretch;
+    }
+
+    .join-form {
+        flex: 1 1 120px;
     }
 
     .button {
