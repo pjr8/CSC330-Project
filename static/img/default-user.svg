@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">Default user profile picture</title>
+  <desc id="desc">A simple profile silhouette in Southern Connecticut State University blue.</desc>
+  <rect width="240" height="240" rx="120" fill="#eef6ff"/>
+  <circle cx="120" cy="88" r="42" fill="#003399"/>
+  <path fill="#003399" d="M50 205c8-41 35-68 70-68s62 27 70 68H50z"/>
+  <path fill="#00adeb" d="M34 196c13-43 45-73 86-73s73 30 86 73c-19 27-50 44-86 44s-67-17-86-44z" opacity=".18"/>
+</svg>

@@ -1,0 +1,982 @@
+from __future__ import annotations
+
+import json
+import sqlite3
+from datetime import datetime
+from pathlib import Path
+from uuid import NAMESPACE_URL, UUID, uuid5
+
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from accounts.store import normalize_email
+from models import (
+    GroupMembership,
+    Message,
+    NotificationPreference,
+    StudyGroup,
+    User,
+)
+
+
+DEFAULT_USER_EMAIL = "test@southernct.edu"
+DEFAULT_CONVERSATIONS = ("John Smith", "Sarah Lee", "Group Chat")
+APP_NAMESPACE = uuid5(NAMESPACE_URL, "https://github.com/pjr8/CSC330-Project")
+
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    scsu_email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL DEFAULT '',
+    first_name TEXT NOT NULL DEFAULT '',
+    last_name TEXT NOT NULL DEFAULT '',
+    major TEXT NOT NULL DEFAULT '',
+    interests TEXT NOT NULL DEFAULT '[]',
+    bio TEXT NOT NULL DEFAULT '',
+    profile_image_url TEXT NOT NULL DEFAULT '',
+    contact_info TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'active',
+    role TEXT NOT NULL DEFAULT 'student',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS notification_preferences (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    email_enabled INTEGER NOT NULL DEFAULT 1,
+    in_app_enabled INTEGER NOT NULL DEFAULT 1,
+    message_alerts INTEGER NOT NULL DEFAULT 1,
+    reminder_alerts INTEGER NOT NULL DEFAULT 1,
+    group_update_alerts INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS study_groups (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    start_at TEXT,
+    end_at TEXT,
+    modality TEXT NOT NULL DEFAULT '',
+    location TEXT NOT NULL DEFAULT '',
+    meeting_link TEXT NOT NULL DEFAULT '',
+    max_members INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL,
+    creator_id TEXT REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS group_memberships (
+    id TEXT PRIMARY KEY,
+    member_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+    group_id TEXT REFERENCES study_groups(id) ON DELETE CASCADE,
+    joined_at TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'member',
+    status TEXT NOT NULL DEFAULT 'active',
+    UNIQUE(member_id, group_id)
+);
+
+CREATE TABLE IF NOT EXISTS favorite_study_groups (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    group_id TEXT NOT NULL REFERENCES study_groups(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, group_id)
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id TEXT PRIMARY KEY,
+    reviewer_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    group_id TEXT REFERENCES study_groups(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL DEFAULT 0,
+    comment TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active'
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+    id TEXT PRIMARY KEY,
+    reporter_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    target_type TEXT NOT NULL DEFAULT '',
+    target_id TEXT,
+    reason TEXT NOT NULL DEFAULT '',
+    details TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL,
+    resolved_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    recipient_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+    message TEXT NOT NULL DEFAULT '',
+    type TEXT NOT NULL DEFAULT '',
+    related_target_type TEXT,
+    related_target_id TEXT,
+    created_at TEXT NOT NULL,
+    read_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS conversations (
+    name TEXT PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id TEXT PRIMARY KEY,
+    conversation_name TEXT NOT NULL REFERENCES conversations(name) ON DELETE CASCADE,
+    sender_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    recipient_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    content TEXT NOT NULL,
+    sent_at TEXT NOT NULL,
+    edited_at TEXT,
+    status TEXT NOT NULL DEFAULT 'sent'
+);
+"""
+
+
+class SQLiteStudyGroupStore:
+    """SQLite persistence for the model dataclasses used by the Flask routes."""
+
+    def __init__(self, database_path: str | Path) -> None:
+        self.database_path = str(database_path)
+
+    def initialize(self) -> None:
+        self._ensure_parent_directory()
+        with self._connect() as conn:
+            conn.executescript(SCHEMA)
+            self._seed_defaults(conn)
+
+    def find_by_email(self, email: str) -> User | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM users WHERE scsu_email = ?",
+                (normalize_email(email),),
+            ).fetchone()
+            if row is None:
+                return None
+
+            user = self._user_from_row(row)
+            self._apply_preference(conn, user)
+            return user
+
+    def create_user(self, user: User) -> User:
+        user.scsuEmail = normalize_email(user.scsuEmail)
+        with self._connect() as conn:
+            try:
+                self._insert_user(conn, user, ignore_existing=False)
+            except sqlite3.IntegrityError as exc:
+                raise ValueError("duplicate_email") from exc
+        return user
+
+    def authenticate_user(self, email: str, password: str) -> User | None:
+        user = self.find_by_email(email)
+        if user is None:
+            return None
+
+        if check_password_hash(user.passwordHash, password):
+            return user
+
+        if user.passwordHash == password:
+            return user
+
+        return None
+
+    def get_user(self, user_id: str | UUID | None) -> User | None:
+        if not user_id:
+            return None
+
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM users WHERE id = ?",
+                (str(user_id),),
+            ).fetchone()
+            if row is None:
+                return None
+
+            user = self._user_from_row(row)
+            self._apply_preference(conn, user)
+            return user
+
+    def user_for_session(self, user_id: str | UUID | None) -> User:
+        user = self.get_user(user_id)
+        if user is not None:
+            return user
+
+        default_user = self.find_by_email(DEFAULT_USER_EMAIL)
+        if default_user is None:
+            raise RuntimeError("Default user seed is missing from the SQLite database")
+
+        return default_user
+
+    def update_user_profile(
+        self,
+        user_id: str | UUID,
+        *,
+        first_name: str,
+        last_name: str,
+        major: str,
+        bio: str,
+        interests: list[str],
+        contact_info: str,
+    ) -> User:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                UPDATE users
+                SET first_name = ?,
+                    last_name = ?,
+                    major = ?,
+                    bio = ?,
+                    interests = ?,
+                    contact_info = ?
+                WHERE id = ?
+                """,
+                (
+                    first_name,
+                    last_name,
+                    major,
+                    bio,
+                    json.dumps(interests),
+                    contact_info,
+                    str(user_id),
+                ),
+            )
+
+        updated_user = self.get_user(user_id)
+        if updated_user is None:
+            raise RuntimeError("Updated user could not be reloaded from SQLite")
+
+        return updated_user
+
+    def study_group_listing_data(
+        self, user_id: str | UUID | None
+    ) -> tuple[User, list[StudyGroup]]:
+        with self._connect() as conn:
+            users = self._load_users(conn)
+            groups = self._load_study_groups(conn, users)
+            self._load_memberships(conn, users, groups)
+            self._load_favorites(conn, users, groups)
+
+            resolved_user_id = self._resolve_user_id(conn, user_id)
+            current_user = users.get(resolved_user_id)
+            if current_user is None:
+                raise RuntimeError("Current user could not be loaded from SQLite")
+
+            return current_user, list(groups.values())
+
+    def list_conversations(self) -> list[str]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT name
+                FROM conversations
+                ORDER BY
+                    CASE name
+                        WHEN 'John Smith' THEN 0
+                        WHEN 'Sarah Lee' THEN 1
+                        WHEN 'Group Chat' THEN 2
+                        ELSE 99
+                    END,
+                    name
+                """
+            ).fetchall()
+
+        return [row["name"] for row in rows]
+
+    def messages_for_conversation(
+        self,
+        conversation_name: str,
+        current_user_id: str | UUID | None,
+    ) -> list[dict[str, str]]:
+        with self._connect() as conn:
+            users = self._load_users(conn)
+            resolved_user_id = self._resolve_user_id(conn, current_user_id)
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM messages
+                WHERE conversation_name = ? AND status != 'deleted'
+                ORDER BY sent_at ASC
+                """,
+                (conversation_name,),
+            ).fetchall()
+
+        rendered_messages: list[dict[str, str]] = []
+        for row in rows:
+            sender = users.get(row["sender_id"]) if row["sender_id"] else None
+            recipient = users.get(row["recipient_id"]) if row["recipient_id"] else None
+            message = Message(
+                id=UUID(row["id"]),
+                sender=sender,
+                recipient=recipient,
+                content=row["content"],
+                sentAt=_parse_datetime(row["sent_at"]) or datetime.now(),
+                editedAt=_parse_datetime(row["edited_at"]),
+                status=row["status"],
+            )
+
+            sender_label = _display_name(sender)
+            if sender is not None and str(sender.id) == resolved_user_id:
+                sender_label = "You"
+
+            rendered_messages.append(
+                {
+                    "sender": sender_label,
+                    "text": message.content,
+                }
+            )
+
+        return rendered_messages
+
+    def add_outgoing_message(
+        self,
+        conversation_name: str,
+        content: str,
+        current_user_id: str | UUID | None,
+    ) -> Message | None:
+        content = content.strip()
+        if not content:
+            return None
+
+        with self._connect() as conn:
+            sender_id = self._resolve_user_id(conn, current_user_id)
+            recipient_id = self._find_user_id_by_display_name(conn, conversation_name)
+            if recipient_id == sender_id:
+                recipient_id = None
+
+            conn.execute(
+                "INSERT OR IGNORE INTO conversations (name) VALUES (?)",
+                (conversation_name,),
+            )
+
+            message = Message(content=content)
+            conn.execute(
+                """
+                INSERT INTO messages (
+                    id,
+                    conversation_name,
+                    sender_id,
+                    recipient_id,
+                    content,
+                    sent_at,
+                    edited_at,
+                    status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(message.id),
+                    conversation_name,
+                    sender_id,
+                    recipient_id,
+                    message.content,
+                    _format_datetime(message.sentAt),
+                    _format_datetime(message.editedAt),
+                    message.status,
+                ),
+            )
+
+            return message
+
+    def _ensure_parent_directory(self) -> None:
+        if self.database_path == ":memory:":
+            return
+
+        Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
+
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.database_path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
+
+    def _seed_defaults(self, conn: sqlite3.Connection) -> None:
+        users = {
+            "test": User(
+                id=_stable_uuid("user:test"),
+                scsuEmail=DEFAULT_USER_EMAIL,
+                passwordHash=generate_password_hash("1234"),
+                firstName="Test",
+                lastName="User",
+                major="Computer Science",
+                interests=["Flask", "UI design", "algorithms"],
+                bio=(
+                    "Student interested in web development, Python, and building "
+                    "useful campus tools."
+                ),
+                contactInfo="test@southernct.edu",
+            ),
+            "john": User(
+                id=_stable_uuid("user:john-smith"),
+                scsuEmail="john.smith@southernct.edu",
+                firstName="John",
+                lastName="Smith",
+                major="Computer Science",
+            ),
+            "sarah": User(
+                id=_stable_uuid("user:sarah-lee"),
+                scsuEmail="sarah.lee@southernct.edu",
+                firstName="Sarah",
+                lastName="Lee",
+                major="Mathematics",
+            ),
+            "alex": User(
+                id=_stable_uuid("user:alex-mitchell"),
+                scsuEmail="alex.mitchell@southernct.edu",
+                firstName="Alex",
+                lastName="Mitchell",
+                major="Computer Science",
+            ),
+            "priya": User(
+                id=_stable_uuid("user:priya-nair"),
+                scsuEmail="priya.nair@southernct.edu",
+                firstName="Priya",
+                lastName="Nair",
+                major="Biology",
+            ),
+            "marcus": User(
+                id=_stable_uuid("user:marcus-reed"),
+                scsuEmail="marcus.reed@southernct.edu",
+                firstName="Marcus",
+                lastName="Reed",
+                major="History",
+            ),
+            "lena": User(
+                id=_stable_uuid("user:lena-ortiz"),
+                scsuEmail="lena.ortiz@southernct.edu",
+                firstName="Lena",
+                lastName="Ortiz",
+                major="Chemistry",
+            ),
+        }
+
+        for user in users.values():
+            self._insert_user(conn, user, ignore_existing=True)
+
+        groups = [
+            StudyGroup(
+                id=_stable_uuid("group:software-design-studio"),
+                title="Software Design Studio",
+                subject="CSC 330 - Software Engineering",
+                description=(
+                    "Peer review for project milestones, UML diagrams, Flask routes, "
+                    "and test planning before the next sprint submission."
+                ),
+                startAt=datetime(2026, 5, 4, 16, 0),
+                endAt=datetime(2026, 5, 4, 17, 30),
+                modality="In person",
+                location="Buley Library, Room 205",
+                maxMembers=8,
+                creator=users["alex"],
+            ),
+            StudyGroup(
+                id=_stable_uuid("group:calculus-problem-session"),
+                title="Calculus II Problem Session",
+                subject="MAT 221 - Calculus II",
+                description=(
+                    "Structured practice on integration strategies, sequences, and "
+                    "series with time reserved for exam review questions."
+                ),
+                startAt=datetime(2026, 5, 5, 11, 0),
+                endAt=datetime(2026, 5, 5, 12, 15),
+                modality="In person",
+                location="Engleman Hall, A112",
+                maxMembers=6,
+                creator=users["test"],
+            ),
+            StudyGroup(
+                id=_stable_uuid("group:anatomy-lab-review"),
+                title="Anatomy Lab Review",
+                subject="BIO 211 - Human Anatomy and Physiology",
+                description=(
+                    "Lab practical preparation using diagrams, terminology drills, "
+                    "and collaborative review of recent lecture objectives."
+                ),
+                startAt=datetime(2026, 5, 6, 18, 0),
+                endAt=datetime(2026, 5, 6, 19, 15),
+                modality="Hybrid",
+                location="Jennings Hall, Lab 148",
+                meetingLink="https://example.edu/scsu-bio211-review",
+                maxMembers=10,
+                creator=users["priya"],
+            ),
+            StudyGroup(
+                id=_stable_uuid("group:research-writing-circle"),
+                title="Research Writing Circle",
+                subject="HIS 112 - U.S. History Since 1877",
+                description=(
+                    "Source evaluation, thesis refinement, and citation review for "
+                    "final research papers in a moderated virtual session."
+                ),
+                startAt=datetime(2026, 5, 7, 20, 0),
+                endAt=datetime(2026, 5, 7, 21, 0),
+                modality="Virtual",
+                meetingLink="https://example.edu/scsu-history-circle",
+                maxMembers=0,
+                creator=users["marcus"],
+            ),
+            StudyGroup(
+                id=_stable_uuid("group:general-chemistry-lab-prep"),
+                title="General Chemistry Lab Prep",
+                subject="CHE 120 - General Chemistry I",
+                description=(
+                    "Pre-lab calculations, safety review, and discussion of the "
+                    "experiment procedure before Friday's lab block."
+                ),
+                startAt=datetime(2026, 5, 8, 9, 30),
+                endAt=datetime(2026, 5, 8, 10, 30),
+                modality="In person",
+                location="Jennings Hall, Room 231",
+                maxMembers=5,
+                creator=users["lena"],
+            ),
+        ]
+
+        for group in groups:
+            self._insert_study_group(conn, group, ignore_existing=True)
+
+        member_sets = [
+            (groups[0], [users["test"], users["alex"], users["priya"]]),
+            (groups[1], [users["test"], users["marcus"]]),
+            (groups[2], [users["priya"], users["lena"], users["marcus"], users["alex"]]),
+            (groups[3], [users["marcus"], users["test"], users["alex"]]),
+            (groups[4], [users["lena"], users["priya"]]),
+        ]
+
+        for group, members in member_sets:
+            for member in members:
+                membership = GroupMembership(
+                    id=_stable_uuid(f"membership:{member.id}:{group.id}"),
+                    member=member,
+                    group=group,
+                )
+                self._insert_membership(conn, membership, ignore_existing=True)
+
+        for group in (groups[0], groups[3]):
+            self._insert_favorite(conn, users["test"], group)
+
+        for name in DEFAULT_CONVERSATIONS:
+            conn.execute(
+                "INSERT OR IGNORE INTO conversations (name) VALUES (?)",
+                (name,),
+            )
+
+        self._insert_message(
+            conn,
+            "John Smith",
+            Message(
+                id=_stable_uuid("message:john:incoming-1"),
+                sender=users["john"],
+                recipient=users["test"],
+                content="Hey, are we meeting today?",
+                sentAt=datetime(2026, 5, 4, 10, 0),
+            ),
+            ignore_existing=True,
+        )
+        self._insert_message(
+            conn,
+            "John Smith",
+            Message(
+                id=_stable_uuid("message:john:outgoing-1"),
+                sender=users["test"],
+                recipient=users["john"],
+                content="Yes, at 3 PM in the library.",
+                sentAt=datetime(2026, 5, 4, 10, 5),
+            ),
+            ignore_existing=True,
+        )
+
+    def _insert_user(
+        self,
+        conn: sqlite3.Connection,
+        user: User,
+        *,
+        ignore_existing: bool,
+    ) -> None:
+        insert_clause = "INSERT OR IGNORE" if ignore_existing else "INSERT"
+        conn.execute(
+            f"""
+            {insert_clause} INTO users (
+                id,
+                scsu_email,
+                password_hash,
+                first_name,
+                last_name,
+                major,
+                interests,
+                bio,
+                profile_image_url,
+                contact_info,
+                status,
+                role,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(user.id),
+                normalize_email(user.scsuEmail),
+                user.passwordHash,
+                user.firstName,
+                user.lastName,
+                user.major,
+                json.dumps(user.interests),
+                user.bio,
+                user.profileImageUrl,
+                user.contactInfo,
+                user.status,
+                user.role,
+                _format_datetime(user.createdAt),
+            ),
+        )
+
+        preference = user.preference or NotificationPreference(user=user)
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO notification_preferences (
+                user_id,
+                email_enabled,
+                in_app_enabled,
+                message_alerts,
+                reminder_alerts,
+                group_update_alerts
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(user.id),
+                int(preference.emailEnabled),
+                int(preference.inAppEnabled),
+                int(preference.messageAlerts),
+                int(preference.reminderAlerts),
+                int(preference.groupUpdateAlerts),
+            ),
+        )
+
+    def _insert_study_group(
+        self,
+        conn: sqlite3.Connection,
+        group: StudyGroup,
+        *,
+        ignore_existing: bool,
+    ) -> None:
+        insert_clause = "INSERT OR IGNORE" if ignore_existing else "INSERT"
+        conn.execute(
+            f"""
+            {insert_clause} INTO study_groups (
+                id,
+                title,
+                subject,
+                description,
+                start_at,
+                end_at,
+                modality,
+                location,
+                meeting_link,
+                max_members,
+                status,
+                created_at,
+                creator_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(group.id),
+                group.title,
+                group.subject,
+                group.description,
+                _format_datetime(group.startAt),
+                _format_datetime(group.endAt),
+                group.modality,
+                group.location,
+                group.meetingLink,
+                group.maxMembers,
+                group.status,
+                _format_datetime(group.createdAt),
+                str(group.creator.id) if group.creator else None,
+            ),
+        )
+
+    def _insert_membership(
+        self,
+        conn: sqlite3.Connection,
+        membership: GroupMembership,
+        *,
+        ignore_existing: bool,
+    ) -> None:
+        insert_clause = "INSERT OR IGNORE" if ignore_existing else "INSERT"
+        conn.execute(
+            f"""
+            {insert_clause} INTO group_memberships (
+                id,
+                member_id,
+                group_id,
+                joined_at,
+                role,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(membership.id),
+                str(membership.member.id) if membership.member else None,
+                str(membership.group.id) if membership.group else None,
+                _format_datetime(membership.joinedAt),
+                membership.role,
+                membership.status,
+            ),
+        )
+
+    def _insert_favorite(
+        self,
+        conn: sqlite3.Connection,
+        user: User,
+        group: StudyGroup,
+    ) -> None:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO favorite_study_groups (user_id, group_id)
+            VALUES (?, ?)
+            """,
+            (str(user.id), str(group.id)),
+        )
+
+    def _insert_message(
+        self,
+        conn: sqlite3.Connection,
+        conversation_name: str,
+        message: Message,
+        *,
+        ignore_existing: bool,
+    ) -> None:
+        insert_clause = "INSERT OR IGNORE" if ignore_existing else "INSERT"
+        conn.execute(
+            f"""
+            {insert_clause} INTO messages (
+                id,
+                conversation_name,
+                sender_id,
+                recipient_id,
+                content,
+                sent_at,
+                edited_at,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(message.id),
+                conversation_name,
+                str(message.sender.id) if message.sender else None,
+                str(message.recipient.id) if message.recipient else None,
+                message.content,
+                _format_datetime(message.sentAt),
+                _format_datetime(message.editedAt),
+                message.status,
+            ),
+        )
+
+    def _load_users(self, conn: sqlite3.Connection) -> dict[str, User]:
+        rows = conn.execute("SELECT * FROM users ORDER BY first_name, last_name").fetchall()
+        users = {row["id"]: self._user_from_row(row) for row in rows}
+        self._apply_preferences(conn, users)
+        return users
+
+    def _load_study_groups(
+        self,
+        conn: sqlite3.Connection,
+        users: dict[str, User],
+    ) -> dict[str, StudyGroup]:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM study_groups
+            ORDER BY COALESCE(start_at, created_at), title
+            """
+        ).fetchall()
+
+        groups: dict[str, StudyGroup] = {}
+        for row in rows:
+            creator = users.get(row["creator_id"]) if row["creator_id"] else None
+            group = StudyGroup(
+                id=UUID(row["id"]),
+                title=row["title"],
+                subject=row["subject"],
+                description=row["description"],
+                startAt=_parse_datetime(row["start_at"]),
+                endAt=_parse_datetime(row["end_at"]),
+                modality=row["modality"],
+                location=row["location"],
+                meetingLink=row["meeting_link"],
+                maxMembers=row["max_members"],
+                status=row["status"],
+                createdAt=_parse_datetime(row["created_at"]) or datetime.now(),
+                creator=creator,
+            )
+            groups[row["id"]] = group
+
+        return groups
+
+    def _load_memberships(
+        self,
+        conn: sqlite3.Connection,
+        users: dict[str, User],
+        groups: dict[str, StudyGroup],
+    ) -> None:
+        rows = conn.execute("SELECT * FROM group_memberships").fetchall()
+        for row in rows:
+            member = users.get(row["member_id"]) if row["member_id"] else None
+            group = groups.get(row["group_id"]) if row["group_id"] else None
+            GroupMembership(
+                id=UUID(row["id"]),
+                member=member,
+                group=group,
+                joinedAt=_parse_datetime(row["joined_at"]) or datetime.now(),
+                role=row["role"],
+                status=row["status"],
+            )
+
+    def _load_favorites(
+        self,
+        conn: sqlite3.Connection,
+        users: dict[str, User],
+        groups: dict[str, StudyGroup],
+    ) -> None:
+        rows = conn.execute("SELECT * FROM favorite_study_groups").fetchall()
+        for row in rows:
+            user = users.get(row["user_id"])
+            group = groups.get(row["group_id"])
+            if user is None or group is None:
+                continue
+
+            if group not in user.favoriteStudyGroups:
+                user.favoriteStudyGroups.append(group)
+            if user not in group.favoritedBy:
+                group.favoritedBy.append(user)
+
+    def _user_from_row(self, row: sqlite3.Row) -> User:
+        return User(
+            id=UUID(row["id"]),
+            scsuEmail=row["scsu_email"],
+            passwordHash=row["password_hash"],
+            firstName=row["first_name"],
+            lastName=row["last_name"],
+            major=row["major"],
+            interests=_parse_json_list(row["interests"]),
+            bio=row["bio"],
+            profileImageUrl=row["profile_image_url"],
+            contactInfo=row["contact_info"],
+            status=row["status"],
+            role=row["role"],
+            createdAt=_parse_datetime(row["created_at"]) or datetime.now(),
+        )
+
+    def _apply_preferences(
+        self,
+        conn: sqlite3.Connection,
+        users: dict[str, User],
+    ) -> None:
+        rows = conn.execute("SELECT * FROM notification_preferences").fetchall()
+        for row in rows:
+            user = users.get(row["user_id"])
+            if user is not None:
+                user.preference = self._preference_from_row(row, user)
+
+    def _apply_preference(self, conn: sqlite3.Connection, user: User) -> None:
+        row = conn.execute(
+            "SELECT * FROM notification_preferences WHERE user_id = ?",
+            (str(user.id),),
+        ).fetchone()
+        if row is not None:
+            user.preference = self._preference_from_row(row, user)
+
+    def _preference_from_row(
+        self,
+        row: sqlite3.Row,
+        user: User,
+    ) -> NotificationPreference:
+        return NotificationPreference(
+            user=user,
+            emailEnabled=bool(row["email_enabled"]),
+            inAppEnabled=bool(row["in_app_enabled"]),
+            messageAlerts=bool(row["message_alerts"]),
+            reminderAlerts=bool(row["reminder_alerts"]),
+            groupUpdateAlerts=bool(row["group_update_alerts"]),
+        )
+
+    def _resolve_user_id(
+        self,
+        conn: sqlite3.Connection,
+        user_id: str | UUID | None,
+    ) -> str:
+        if user_id:
+            row = conn.execute(
+                "SELECT id FROM users WHERE id = ?",
+                (str(user_id),),
+            ).fetchone()
+            if row is not None:
+                return row["id"]
+
+        row = conn.execute(
+            "SELECT id FROM users WHERE scsu_email = ?",
+            (DEFAULT_USER_EMAIL,),
+        ).fetchone()
+        if row is not None:
+            return row["id"]
+
+        row = conn.execute("SELECT id FROM users ORDER BY created_at LIMIT 1").fetchone()
+        if row is None:
+            raise RuntimeError("No users are available in the SQLite database")
+
+        return row["id"]
+
+    def _find_user_id_by_display_name(
+        self,
+        conn: sqlite3.Connection,
+        display_name: str,
+    ) -> str | None:
+        rows = conn.execute("SELECT id, first_name, last_name FROM users").fetchall()
+        for row in rows:
+            full_name = f"{row['first_name']} {row['last_name']}".strip()
+            if full_name == display_name:
+                return row["id"]
+
+        return None
+
+
+def _stable_uuid(name: str) -> UUID:
+    return uuid5(APP_NAMESPACE, name)
+
+
+def _format_datetime(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+
+    return value.isoformat(timespec="seconds")
+
+
+def _parse_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+
+    return datetime.fromisoformat(value)
+
+
+def _parse_json_list(value: str | None) -> list[str]:
+    if not value:
+        return []
+
+    try:
+        decoded = json.loads(value)
+    except json.JSONDecodeError:
+        return []
+
+    if not isinstance(decoded, list):
+        return []
+
+    return [str(item) for item in decoded]
+
+
+def _display_name(user: User | None) -> str:
+    if user is None:
+        return ""
+
+    return user.getFullName() or user.scsuEmail
