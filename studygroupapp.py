@@ -34,6 +34,15 @@ def create_app():
             current_user=user
         )
 
+    @app.route("/register", methods=["GET", "POST"])
+    def register():
+        notice = None
+
+        if request.method == "POST":
+            notice = "This main branch now includes the register page layout, but account storage is not wired up here yet."
+
+        return render_template("register.html", notice=notice)
+
     return app
 
 
