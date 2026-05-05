@@ -64,4 +64,5 @@ def _format_clock_time(value: datetime) -> str:
 
 
 def _contains_identity(items: list[object], target: object) -> bool:
-    return any(item is target for item in items)
+    target_id = getattr(target, "id", None)
+    return any(getattr(item, "id", None) == target_id for item in items)
