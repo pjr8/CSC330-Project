@@ -104,40 +104,38 @@
         <h1>Create Account</h1>
         <p>Register with your campus email so you can join study groups and stay connected.</p>
 
-        <form method="POST">
+        <form method="GET" action="{{ url_for('accounts.signup') }}">
             <div class="form-field">
                 <label for="firstName">First Name</label>
-                <input id="firstName" type="text" name="firstName">
+                <input id="firstName" type="text" name="firstName" disabled>
             </div>
 
             <div class="form-field">
                 <label for="lastName">Last Name</label>
-                <input id="lastName" type="text" name="lastName">
+                <input id="lastName" type="text" name="lastName" disabled>
             </div>
 
             <div class="form-field">
                 <label for="major">Major</label>
-                <input id="major" type="text" name="major">
+                <input id="major" type="text" name="major" disabled>
             </div>
 
             <div class="form-field">
                 <label for="email">SCSU Email</label>
-                <input id="email" type="email" name="email">
+                <input id="email" type="email" name="email" disabled>
             </div>
 
             <div class="form-field">
                 <label for="password">Password</label>
-                <input id="password" type="password" name="password">
+                <input id="password" type="password" name="password" disabled>
             </div>
 
-            <button type="submit">Register</button>
+            <button type="submit">Continue to Sign Up</button>
         </form>
 
-        {% if notice %}
-            <p class="notice">{{ notice }}</p>
-        {% endif %}
+        <p class="notice">The active signup flow now lives on the updated main branch account page.</p>
 
-        <a class="back-link" href="/messages">Back to messages</a>
+        <a class="back-link" href="{{ url_for('index') }}">Back to login</a>
     </main>
 </body>
 </html>

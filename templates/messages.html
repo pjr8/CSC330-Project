@@ -132,7 +132,7 @@
 <!-- HEADER WITH LOGO -->
 <div class="header">
     <!-- Replace with official SCSU logo PNG -->
-    <img src="/static/scsu-logo.png" alt="SCSU Logo">
+    <img src="{{ url_for('static', filename='images/scsu-logo.png') }}" alt="SCSU Logo">
     <h2>Student Messaging Portal</h2>
 </div>
 
@@ -140,20 +140,12 @@
 
     <!-- SIDEBAR -->
     <div class="sidebar">
-        <a href="/messages?user=John%20Smith"
-           class="chat-user {% if current_user == 'John Smith' %}active{% endif %}">
-            John Smith
-        </a>
-
-        <a href="/messages?user=Sarah%20Lee"
-           class="chat-user {% if current_user == 'Sarah Lee' %}active{% endif %}">
-            Sarah Lee
-        </a>
-
-        <a href="/messages?user=Group%20Chat"
-           class="chat-user {% if current_user == 'Group Chat' %}active{% endif %}">
-            Group Chat
-        </a>
+        {% for conversation in conversations %}
+            <a href="{{ url_for('messages', user=conversation) }}"
+               class="chat-user {% if current_user == conversation %}active{% endif %}">
+                {{ conversation }}
+            </a>
+        {% endfor %}
     </div>
 
     <!-- CHAT -->

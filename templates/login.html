@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCSU Study Group Scheduler - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+    <main class="auth-shell">
+        <section class="auth-panel" aria-labelledby="login-title">
+            <div class="auth-brand">
+                <img
+                    src="{{ url_for('static', filename='images/scsu-logo.png') }}"
+                    alt="Southern Connecticut State University"
+                    class="auth-brand__logo">
+            </div>
+
+            <div class="auth-heading">
+                <p class="eyebrow">SCSU Study Group Scheduler</p>
+                <h1 id="login-title">Login</h1>
+                <p>Access your study groups, messages, and course collaboration tools.</p>
+            </div>
+
+            <form method="POST" class="auth-form">
+                <div class="form-field">
+                    <label for="email">SCSU Email</label>
+                    <input
+                        id="email"
+                        type="text"
+                        name="email"
+                        placeholder="Enter your SCSU email"
+                        autocomplete="email">
+                </div>
+
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password">
+                </div>
+
+                <button class="button button--primary auth-submit" type="submit">Login</button>
+            </form>
+
+            {% if error %}
+                <p class="form-error">{{ error }}</p>
+            {% endif %}
+
+            <p class="auth-footer">
+                Don't have an account?
+                <a href="{{ url_for('accounts.signup') }}">Register here</a>
+            </p>
+        </section>
+    </main>
+</body>
+</html>
