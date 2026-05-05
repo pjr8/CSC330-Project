@@ -10,7 +10,6 @@
             background: #FFFFFF;
         }
 
-        /* HEADER */
         .header {
             background: #003399;
             color: white;
@@ -24,13 +23,11 @@
             margin-right: 15px;
         }
 
-        /* LAYOUT */
         .container {
             display: flex;
             height: 90vh;
         }
 
-        /* SIDEBAR */
         .sidebar {
             width: 30%;
             border-right: 1px solid #ccc;
@@ -39,11 +36,14 @@
         }
 
         .chat-user {
+            display: block;
             padding: 12px;
             margin-bottom: 5px;
             background: white;
             border-radius: 5px;
             cursor: pointer;
+            color: #222;
+            text-decoration: none;
         }
 
         .chat-user.active {
@@ -51,11 +51,17 @@
             color: white;
         }
 
-        /* CHAT AREA */
         .chat {
             width: 70%;
             display: flex;
             flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #ccc;
+            font-weight: bold;
+            color: #003399;
         }
 
         .messages {
@@ -81,7 +87,12 @@
             background: #e6e6e6;
         }
 
-        /* INPUT */
+        .empty-chat {
+            color: #777;
+            text-align: center;
+            margin-top: 30px;
+        }
+
         .input-box {
             display: flex;
             padding: 15px;
@@ -112,54 +123,49 @@
 </head>
 
 <body>
-
-<!-- HEADER WITH LOGO -->
 <div class="header">
-    <!-- Replace with official SCSU logo PNG -->
-    <img src="/static/scsu-logo.png" alt="SCSU Logo">
+    <img src="{{ url_for('static', filename='images/scsu-logo.png') }}" alt="SCSU Logo">
     <h2>Student Messaging Portal</h2>
 </div>
 
 <div class="container">
-
-    <!-- SIDEBAR -->
     <div class="sidebar">
-        <div class="chat-user active">John Smith</div>
-        <div class="chat-user">Sarah Lee</div>
-        <div class="chat-user">Group Chat</div>
+        <a href="/messages?user=John%20Smith"
+           class="chat-user {% if current_user == 'John Smith' %}active{% endif %}">
+            John Smith
+        </a>
+
+        <a href="/messages?user=Sarah%20Lee"
+           class="chat-user {% if current_user == 'Sarah Lee' %}active{% endif %}">
+            Sarah Lee
+        </a>
+
+        <a href="/messages?user=Group%20Chat"
+           class="chat-user {% if current_user == 'Group Chat' %}active{% endif %}">
+            Group Chat
+        </a>
     </div>
 
-    <!-- CHAT -->
     <div class="chat">
+        <div class="chat-header">{{ current_user }}</div>
 
-        <div class="messages" id="messages">
-            <div class="message received">Hey, are we meeting today?</div>
-            <div class="message sent">Yes, at 3 PM in the library.</div>
+        <div class="messages">
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="message {{ 'sent' if msg.sender == 'You' else 'received' }}">
+                        {{ msg.text }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-chat">No messages yet.</div>
+            {% endif %}
         </div>
 
-        <div class="input-box">
-            <input type="text" id="msgInput" placeholder="Type your message...">
-            <button onclick="sendMessage()">Send</button>
-        </div>
-
+        <form method="POST" class="input-box">
+            <input type="text" name="message" placeholder="Type your message..." required>
+            <button type="submit">Send</button>
+        </form>
     </div>
 </div>
-
-<script>
-function sendMessage() {
-    let input = document.getElementById("msgInput");
-    let text = input.value;
-
-    if (text.trim() === "") return;
-
-    let msg = document.createElement("div");
-    msg.className = "message sent";
-    msg.innerText = text;
-
-    document.getElementById("messages").appendChild(msg);
-    input.value = "";
-}
-</script>
-
 </body>
 </html>
