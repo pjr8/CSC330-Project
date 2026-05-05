@@ -1,2 +1,7 @@
 __pycache__
 venv
+.codex
+instance/
+*.sqlite
+*.sqlite3
+*.db
