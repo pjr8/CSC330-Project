@@ -17,15 +17,10 @@
         <section class="page-intro" aria-labelledby="messages-title">
             <div>
                 <p class="eyebrow">Direct messages</p>
-                <h1 id="messages-title">Student Messaging</h1>
+                <h1 id="messages-title">Messages</h1>
                 <p class="page-intro__copy">
-                    Coordinate study sessions with classmates through direct Southern student conversations.
+                    Search classmates or continue recent study-group conversations.
                 </p>
-            </div>
-
-            <div class="student-context" aria-label="Signed in student">
-                <span class="student-context__label">Signed in as</span>
-                <strong>{{ current_user.getFullName() if current_user.getFullName is defined else current_user.firstName }}</strong>
             </div>
         </section>
 
@@ -120,7 +115,7 @@
                     {% else %}
                         <div>
                             <p class="eyebrow">Messages</p>
-                            <h2>Select a conversation</h2>
+                            <h2>No conversation selected</h2>
                         </div>
                     {% endif %}
                 </header>
@@ -141,12 +136,12 @@
                     {% elif selected_recipient %}
                         <div class="empty-state">
                             <h3>Start a direct message</h3>
-                            <p>This chat will be created after your first message is sent.</p>
+                            <p>Send the first message to create this chat.</p>
                         </div>
                     {% else %}
                         <div class="empty-state">
-                            <h3>No conversation selected</h3>
-                            <p>Choose an existing chat or search for a classmate to begin.</p>
+                            <h3>Choose a chat</h3>
+                            <p>Select a recent chat or search for a classmate.</p>
                         </div>
                     {% endif %}
                 </div>

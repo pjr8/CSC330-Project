@@ -45,6 +45,8 @@ class SignupTestCase(unittest.TestCase):
 
         for field_name in ("major", "interests", "bio"):
             self.assertNotIn(f'name="{field_name}"', page)
+        self.assertNotIn("/home</span>", page)
+        self.assertNotIn("Next step", page)
 
     def test_missing_fields_return_error(self) -> None:
         response = self.client.post("/signup", data=self.valid_payload(firstName=""))

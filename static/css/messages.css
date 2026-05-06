@@ -169,7 +169,7 @@ textarea:focus-visible {
 
 .page-intro {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
     align-items: end;
     margin-bottom: 1.5rem;
@@ -225,30 +225,6 @@ h3 {
     margin-bottom: 0;
     color: var(--scsu-muted);
     font-size: 1.05rem;
-}
-
-.student-context {
-    min-height: 112px;
-    display: grid;
-    align-content: end;
-    gap: 0.2rem;
-    padding: 1rem;
-    background: var(--scsu-surface);
-    border: 1px solid var(--scsu-border);
-    border-top: 5px solid var(--scsu-cyan);
-    border-radius: 6px;
-}
-
-.student-context__label {
-    color: var(--scsu-muted);
-    font-size: 0.78rem;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.student-context strong {
-    color: var(--scsu-blue);
-    font-size: 1.25rem;
 }
 
 .messages-layout {

@@ -115,6 +115,15 @@ class SQLitePersistenceTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Data Science", page)
         self.assertIn("Updated through SQLite.", page)
+        self.assertIn("profile-panel", page)
+
+        edit_response = second_client.get("/update-profile")
+        edit_page = edit_response.get_data(as_text=True)
+
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertIn("Edit Profile", edit_page)
+        self.assertIn('name="interests"', edit_page)
+        self.assertIn("SQLite, Flask", edit_page)
 
 
 if __name__ == "__main__":
