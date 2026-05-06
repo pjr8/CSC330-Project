@@ -18,9 +18,17 @@ class JoinStudyGroupTestCase(unittest.TestCase):
             }
         )
         self.client = self.app.test_client()
+        self.login_default_user()
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
+
+    def login_default_user(self) -> None:
+        store = SQLiteStudyGroupStore(self.database_path)
+        user = store.find_by_email("test@southernct.edu")
+        assert user is not None
+        with self.client.session_transaction() as session:
+            session["user_id"] = str(user.id)
 
     def test_join_button_posts_membership_and_redirects_to_listings(self) -> None:
         store = SQLiteStudyGroupStore(self.database_path)
@@ -56,6 +64,60 @@ class JoinStudyGroupTestCase(unittest.TestCase):
         page = response.get_data(as_text=True)
         self.assertIn("General Chemistry Lab Prep", page)
         self.assertIn("Joined", page)
+        self.assertIn("Leave", page)
+
+    def test_leave_button_marks_membership_left_and_redirects_to_listings(self) -> None:
+        store = SQLiteStudyGroupStore(self.database_path)
+        current_user, groups = store.study_group_listing_data(None)
+        group = next(
+            group for group in groups if group.title == "Research Writing Circle"
+        )
+
+        self.assertTrue(self._is_active_member(group, current_user))
+
+        response = self.client.post(f"/study-groups/{group.id}/leave")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers["Location"], "/listings")
+
+        current_user, groups = store.study_group_listing_data(None)
+        left_group = next(
+            group for group in groups if group.title == "Research Writing Circle"
+        )
+        self.assertFalse(self._is_active_member(left_group, current_user))
+        self.assertEqual(self._membership_status(left_group, current_user), "left")
+
+    def test_creator_cannot_leave_owned_group(self) -> None:
+        store = SQLiteStudyGroupStore(self.database_path)
+        current_user, groups = store.study_group_listing_data(None)
+        group = next(
+            group for group in groups if group.title == "Calculus II Problem Session"
+        )
+
+        self.assertTrue(self._is_active_member(group, current_user))
+        self.assertFalse(store.leave_study_group(current_user.id, group.id))
+
+        current_user, groups = store.study_group_listing_data(None)
+        owned_group = next(
+            group for group in groups if group.title == "Calculus II Problem Session"
+        )
+        self.assertTrue(self._is_active_member(owned_group, current_user))
+
+    def test_left_group_can_be_rejoined(self) -> None:
+        store = SQLiteStudyGroupStore(self.database_path)
+        current_user, groups = store.study_group_listing_data(None)
+        group = next(
+            group for group in groups if group.title == "Research Writing Circle"
+        )
+
+        self.assertTrue(store.leave_study_group(current_user.id, group.id))
+        self.assertTrue(store.join_study_group(current_user.id, group.id))
+
+        current_user, groups = store.study_group_listing_data(None)
+        rejoined_group = next(
+            group for group in groups if group.title == "Research Writing Circle"
+        )
+        self.assertTrue(self._is_active_member(rejoined_group, current_user))
 
     def test_full_group_rejects_join(self) -> None:
         store = SQLiteStudyGroupStore(self.database_path)
@@ -90,6 +152,18 @@ class JoinStudyGroupTestCase(unittest.TestCase):
             and membership.status == "active"
             for membership in group.memberships
         )
+
+    @staticmethod
+    def _membership_status(group, user) -> str | None:
+        membership = next(
+            (
+                membership
+                for membership in group.memberships
+                if membership.member is not None and membership.member.id == user.id
+            ),
+            None,
+        )
+        return membership.status if membership is not None else None
 
 
 if __name__ == "__main__":

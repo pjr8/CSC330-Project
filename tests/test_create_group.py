@@ -18,6 +18,7 @@ class CreateStudyGroupTestCase(unittest.TestCase):
             }
         )
         self.client = self.app.test_client()
+        self.login_default_user()
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
@@ -37,6 +38,13 @@ class CreateStudyGroupTestCase(unittest.TestCase):
         }
         payload.update(overrides)
         return payload
+
+    def login_default_user(self) -> None:
+        store = SQLiteStudyGroupStore(self.database_path)
+        user = store.find_by_email("test@southernct.edu")
+        assert user is not None
+        with self.client.session_transaction() as session:
+            session["user_id"] = str(user.id)
 
     def test_get_create_renders_form_fields(self) -> None:
         response = self.client.get("/create")

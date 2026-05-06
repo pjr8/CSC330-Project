@@ -421,6 +421,17 @@ dd {
     border-color: #c7ddfb;
 }
 
+.button--danger {
+    background: var(--white);
+    color: #b42318;
+    border-color: #f0b8b3;
+}
+
+.button--danger:hover,
+.button--danger:focus-visible {
+    background: #fff4f2;
+}
+
 .button--disabled {
     background: #f4f6f9;
     color: var(--gray);

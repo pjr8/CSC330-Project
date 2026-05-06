@@ -4,26 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SCSU Study Group Scheduler - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
-    <header class="site-header" aria-label="SCSU Study Group Scheduler">
-        <div class="site-header__inner">
-            <a class="brand-logo" href="{{ url_for('home') }}" aria-label="Southern Connecticut State University Study Group Scheduler home">
-                <img
-                    src="{{ url_for('static', filename='images/scsu-logo.png') }}"
-                    alt="Southern Connecticut State University"
-                    class="brand-logo__image">
-            </a>
-
-            <nav class="top-nav" aria-label="Primary navigation">
-                <a class="top-nav__link" href="{{ url_for('profile') }}">Profile</a>
-                <a class="top-nav__link top-nav__link--quiet" href="{{ url_for('logout') }}">Logout</a>
-            </nav>
-        </div>
-    </header>
+    {% set active_page = "home" %}
+    {% include "partials/_app_header.html" %}
 
     <main id="main-content" class="home-shell">
         <section class="home-hero" aria-labelledby="home-title">
@@ -61,7 +49,7 @@
                     <span>Review available study groups and join one that fits your schedule.</span>
                 </a>
 
-                <a class="action-card" href="{{ url_for('messages') }}">
+                <a class="action-card" href="{{ url_for('messages.inbox') }}">
                     <span class="action-card__kicker">Connect</span>
                     <strong>Messages</strong>
                     <span>Coordinate meeting details and keep group communication organized.</span>

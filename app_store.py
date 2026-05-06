@@ -19,7 +19,6 @@ from models import (
 
 
 DEFAULT_USER_EMAIL = "test@southernct.edu"
-DEFAULT_CONVERSATIONS = ("John Smith", "Sarah Lee", "Group Chat")
 APP_NAMESPACE = uuid5(NAMESPACE_URL, "https://github.com/pjr8/CSC330-Project")
 
 
@@ -116,19 +115,48 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE TABLE IF NOT EXISTS conversations (
-    name TEXT PRIMARY KEY
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL DEFAULT 'dm',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    last_message_at TEXT,
+    status TEXT NOT NULL DEFAULT 'active'
+);
+
+CREATE TABLE IF NOT EXISTS conversation_participants (
+    conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at TEXT NOT NULL,
+    last_read_at TEXT,
+    PRIMARY KEY (conversation_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS direct_message_threads (
+    conversation_id TEXT PRIMARY KEY REFERENCES conversations(id) ON DELETE CASCADE,
+    user_one_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_two_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_one_id, user_two_id),
+    CHECK(user_one_id <> user_two_id)
 );
 
 CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
-    conversation_name TEXT NOT NULL REFERENCES conversations(name) ON DELETE CASCADE,
+    conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     sender_id TEXT REFERENCES users(id) ON DELETE SET NULL,
-    recipient_id TEXT REFERENCES users(id) ON DELETE SET NULL,
     content TEXT NOT NULL,
     sent_at TEXT NOT NULL,
     edited_at TEXT,
     status TEXT NOT NULL DEFAULT 'sent'
 );
+
+CREATE INDEX IF NOT EXISTS idx_conversation_participants_user
+    ON conversation_participants(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_sent
+    ON messages(conversation_id, sent_at);
+
+CREATE INDEX IF NOT EXISTS idx_users_search
+    ON users(first_name, last_name, scsu_email);
 """
 
 
@@ -141,6 +169,7 @@ class SQLiteStudyGroupStore:
     def initialize(self) -> None:
         self._ensure_parent_directory()
         with self._connect() as conn:
+            self._drop_legacy_message_tables(conn)
             conn.executescript(SCHEMA)
             self._seed_defaults(conn)
 
@@ -171,10 +200,10 @@ class SQLiteStudyGroupStore:
         if user is None:
             return None
 
-        if check_password_hash(user.passwordHash, password):
-            return user
+        if not user.passwordHash:
+            return None
 
-        if user.passwordHash == password:
+        if check_password_hash(user.passwordHash, password):
             return user
 
         return None
@@ -261,6 +290,24 @@ class SQLiteStudyGroupStore:
                 raise RuntimeError("Current user could not be loaded from SQLite")
 
             return current_user, list(groups.values())
+
+    def study_group_detail_data(
+        self,
+        user_id: str | UUID | None,
+        group_id: str | UUID,
+    ) -> tuple[User, StudyGroup | None]:
+        with self._connect() as conn:
+            users = self._load_users(conn)
+            groups = self._load_study_groups(conn, users)
+            self._load_memberships(conn, users, groups)
+            self._load_favorites(conn, users, groups)
+
+            resolved_user_id = self._resolve_user_id(conn, user_id)
+            current_user = users.get(resolved_user_id)
+            if current_user is None:
+                raise RuntimeError("Current user could not be loaded from SQLite")
+
+            return current_user, groups.get(str(group_id))
 
     def create_study_group(
         self,
@@ -385,24 +432,232 @@ class SQLiteStudyGroupStore:
             )
             return True
 
-    def list_conversations(self) -> list[str]:
+    def leave_study_group(
+        self,
+        user_id: str | UUID | None,
+        group_id: str | UUID,
+    ) -> bool:
         with self._connect() as conn:
+            member_id = self._resolve_user_id(conn, user_id)
+            membership = conn.execute(
+                """
+                SELECT group_memberships.*, study_groups.creator_id
+                FROM group_memberships
+                JOIN study_groups ON study_groups.id = group_memberships.group_id
+                WHERE member_id = ? AND group_id = ?
+                """,
+                (member_id, str(group_id)),
+            ).fetchone()
+            if (
+                membership is None
+                or membership["status"] != "active"
+                or membership["creator_id"] == member_id
+                or membership["role"] == "host"
+            ):
+                return False
+
+            conn.execute(
+                """
+                UPDATE group_memberships
+                SET status = 'left'
+                WHERE id = ?
+                """,
+                (membership["id"],),
+            )
+            return True
+
+    def delete_study_group(
+        self,
+        user_id: str | UUID | None,
+        group_id: str | UUID,
+    ) -> bool:
+        with self._connect() as conn:
+            creator_id = self._resolve_user_id(conn, user_id)
+            cursor = conn.execute(
+                """
+                DELETE FROM study_groups
+                WHERE id = ? AND creator_id = ?
+                """,
+                (str(group_id), creator_id),
+            )
+            return cursor.rowcount > 0
+
+    def search_users_for_dm(
+        self,
+        current_user_id: str | UUID | None,
+        query: str,
+    ) -> list[dict[str, str]]:
+        query = query.strip()
+        if not query:
+            return []
+
+        with self._connect() as conn:
+            resolved_user_id = self._resolve_user_id(conn, current_user_id)
+            like_query = f"%{query.lower()}%"
             rows = conn.execute(
                 """
-                SELECT name
-                FROM conversations
-                ORDER BY
-                    CASE name
-                        WHEN 'John Smith' THEN 0
-                        WHEN 'Sarah Lee' THEN 1
-                        WHEN 'Group Chat' THEN 2
-                        ELSE 99
-                    END,
-                    name
-                """
+                SELECT id, scsu_email, first_name, last_name, major
+                FROM users
+                WHERE id != ?
+                    AND status = 'active'
+                    AND (
+                        lower(first_name || ' ' || last_name) LIKE ?
+                        OR lower(scsu_email) LIKE ?
+                        OR lower(major) LIKE ?
+                    )
+                ORDER BY first_name, last_name, scsu_email
+                LIMIT 10
+                """,
+                (resolved_user_id, like_query, like_query, like_query),
             ).fetchall()
 
-        return [row["name"] for row in rows]
+        return [self._user_search_result_from_row(row) for row in rows]
+
+    def list_user_dm_threads(
+        self,
+        current_user_id: str | UUID | None,
+    ) -> list[dict[str, str]]:
+        with self._connect() as conn:
+            resolved_user_id = self._resolve_user_id(conn, current_user_id)
+            rows = conn.execute(
+                """
+                SELECT
+                    c.id AS conversation_id,
+                    c.last_message_at,
+                    other.id AS participant_id,
+                    other.scsu_email,
+                    other.first_name,
+                    other.last_name,
+                    other.major,
+                    latest.content AS last_message,
+                    latest.sent_at AS last_sent_at
+                FROM conversations c
+                JOIN conversation_participants mine
+                    ON mine.conversation_id = c.id
+                    AND mine.user_id = ?
+                JOIN direct_message_threads d
+                    ON d.conversation_id = c.id
+                JOIN users other
+                    ON other.id = CASE
+                        WHEN d.user_one_id = ? THEN d.user_two_id
+                        ELSE d.user_one_id
+                    END
+                JOIN messages latest
+                    ON latest.id = (
+                        SELECT m.id
+                        FROM messages m
+                        WHERE m.conversation_id = c.id
+                            AND m.status != 'deleted'
+                        ORDER BY m.sent_at DESC
+                        LIMIT 1
+                    )
+                WHERE c.status = 'active'
+                ORDER BY COALESCE(c.last_message_at, latest.sent_at) DESC,
+                    other.first_name,
+                    other.last_name
+                """,
+                (resolved_user_id, resolved_user_id),
+            ).fetchall()
+
+        return [self._thread_summary_from_row(row) for row in rows]
+
+    def get_dm_thread_messages(
+        self,
+        current_user_id: str | UUID | None,
+        conversation_id: str | UUID,
+    ) -> dict[str, object] | None:
+        with self._connect() as conn:
+            resolved_user_id = self._resolve_user_id(conn, current_user_id)
+            thread_row = self._dm_thread_row(conn, resolved_user_id, str(conversation_id))
+            if thread_row is None:
+                return None
+
+            message_rows = conn.execute(
+                """
+                SELECT m.*, u.first_name, u.last_name, u.scsu_email
+                FROM messages m
+                LEFT JOIN users u ON u.id = m.sender_id
+                WHERE m.conversation_id = ?
+                    AND m.status != 'deleted'
+                ORDER BY m.sent_at ASC
+                """,
+                (str(conversation_id),),
+            ).fetchall()
+
+        return {
+            "conversation": self._thread_summary_from_row(thread_row),
+            "messages": [
+                self._message_view_from_row(row, resolved_user_id)
+                for row in message_rows
+            ],
+        }
+
+    def send_direct_message(
+        self,
+        current_user_id: str | UUID | None,
+        *,
+        recipient_id: str | UUID | None = None,
+        conversation_id: str | UUID | None = None,
+        content: str = "",
+    ) -> dict[str, object] | None:
+        content = content.strip()
+        if not content:
+            return None
+
+        with self._connect() as conn:
+            sender_id = self._resolve_user_id(conn, current_user_id)
+            if conversation_id:
+                conversation_id = str(conversation_id)
+                if not self._is_conversation_participant(
+                    conn,
+                    conversation_id,
+                    sender_id,
+                ):
+                    return None
+            elif recipient_id:
+                recipient_id = str(recipient_id)
+                if recipient_id == sender_id:
+                    return None
+                if self._active_user_row(conn, recipient_id) is None:
+                    return None
+                conversation_id = self._ensure_direct_thread(
+                    conn,
+                    sender_id,
+                    recipient_id,
+                )
+            else:
+                return None
+
+            message = Message(content=content)
+            self._insert_message(
+                conn,
+                str(conversation_id),
+                sender_id,
+                message,
+                ignore_existing=False,
+            )
+
+            sent_at = _format_datetime(message.sentAt)
+            conn.execute(
+                """
+                UPDATE conversations
+                SET updated_at = ?,
+                    last_message_at = ?
+                WHERE id = ?
+                """,
+                (sent_at, sent_at, str(conversation_id)),
+            )
+
+            return {
+                "conversation_id": str(conversation_id),
+                "message": message,
+            }
+
+    def list_conversations(self) -> list[str]:
+        return [
+            str(thread["participant_name"])
+            for thread in self.list_user_dm_threads(None)
+        ]
 
     def messages_for_conversation(
         self,
@@ -410,44 +665,25 @@ class SQLiteStudyGroupStore:
         current_user_id: str | UUID | None,
     ) -> list[dict[str, str]]:
         with self._connect() as conn:
-            users = self._load_users(conn)
-            resolved_user_id = self._resolve_user_id(conn, current_user_id)
-            rows = conn.execute(
-                """
-                SELECT *
-                FROM messages
-                WHERE conversation_name = ? AND status != 'deleted'
-                ORDER BY sent_at ASC
-                """,
-                (conversation_name,),
-            ).fetchall()
+            sender_id = self._resolve_user_id(conn, current_user_id)
+            recipient_id = self._find_user_id_by_display_name(conn, conversation_name)
+            if recipient_id is None:
+                return []
+            conversation_id = self._find_direct_thread_id(conn, sender_id, recipient_id)
+            if conversation_id is None:
+                return []
 
-        rendered_messages: list[dict[str, str]] = []
-        for row in rows:
-            sender = users.get(row["sender_id"]) if row["sender_id"] else None
-            recipient = users.get(row["recipient_id"]) if row["recipient_id"] else None
-            message = Message(
-                id=UUID(row["id"]),
-                sender=sender,
-                recipient=recipient,
-                content=row["content"],
-                sentAt=_parse_datetime(row["sent_at"]) or datetime.now(),
-                editedAt=_parse_datetime(row["edited_at"]),
-                status=row["status"],
-            )
+        thread = self.get_dm_thread_messages(current_user_id, conversation_id)
+        if thread is None:
+            return []
 
-            sender_label = _display_name(sender)
-            if sender is not None and str(sender.id) == resolved_user_id:
-                sender_label = "You"
-
-            rendered_messages.append(
-                {
-                    "sender": sender_label,
-                    "text": message.content,
-                }
-            )
-
-        return rendered_messages
+        return [
+            {
+                "sender": "You" if message["is_mine"] else str(message["sender_name"]),
+                "text": str(message["content"]),
+            }
+            for message in thread["messages"]
+        ]
 
     def add_outgoing_message(
         self,
@@ -455,49 +691,21 @@ class SQLiteStudyGroupStore:
         content: str,
         current_user_id: str | UUID | None,
     ) -> Message | None:
-        content = content.strip()
-        if not content:
+        with self._connect() as conn:
+            recipient_id = self._find_user_id_by_display_name(conn, conversation_name)
+
+        if recipient_id is None:
             return None
 
-        with self._connect() as conn:
-            sender_id = self._resolve_user_id(conn, current_user_id)
-            recipient_id = self._find_user_id_by_display_name(conn, conversation_name)
-            if recipient_id == sender_id:
-                recipient_id = None
+        result = self.send_direct_message(
+            current_user_id,
+            recipient_id=recipient_id,
+            content=content,
+        )
+        if result is None:
+            return None
 
-            conn.execute(
-                "INSERT OR IGNORE INTO conversations (name) VALUES (?)",
-                (conversation_name,),
-            )
-
-            message = Message(content=content)
-            conn.execute(
-                """
-                INSERT INTO messages (
-                    id,
-                    conversation_name,
-                    sender_id,
-                    recipient_id,
-                    content,
-                    sent_at,
-                    edited_at,
-                    status
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    str(message.id),
-                    conversation_name,
-                    sender_id,
-                    recipient_id,
-                    message.content,
-                    _format_datetime(message.sentAt),
-                    _format_datetime(message.editedAt),
-                    message.status,
-                ),
-            )
-
-            return message
+        return result["message"]  # type: ignore[return-value]
 
     def _ensure_parent_directory(self) -> None:
         if self.database_path == ":memory:":
@@ -510,6 +718,295 @@ class SQLiteStudyGroupStore:
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
         return conn
+
+    def _drop_legacy_message_tables(self, conn: sqlite3.Connection) -> None:
+        message_columns = _table_columns(conn, "messages")
+        conversation_columns = _table_columns(conn, "conversations")
+        has_legacy_messages = "conversation_name" in message_columns
+        has_legacy_conversations = (
+            "name" in conversation_columns and "id" not in conversation_columns
+        )
+
+        if has_legacy_messages or has_legacy_conversations:
+            conn.execute("DROP TABLE IF EXISTS messages")
+            conn.execute("DROP TABLE IF EXISTS direct_message_threads")
+            conn.execute("DROP TABLE IF EXISTS conversation_participants")
+            conn.execute("DROP TABLE IF EXISTS conversations")
+
+    def _insert_conversation(
+        self,
+        conn: sqlite3.Connection,
+        conversation_id: str,
+        *,
+        created_at: datetime | None = None,
+        last_message_at: datetime | None = None,
+        ignore_existing: bool,
+    ) -> None:
+        created_at = created_at or datetime.now()
+        updated_at = last_message_at or created_at
+        insert_clause = "INSERT OR IGNORE" if ignore_existing else "INSERT"
+        conn.execute(
+            f"""
+            {insert_clause} INTO conversations (
+                id,
+                type,
+                created_at,
+                updated_at,
+                last_message_at,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                conversation_id,
+                "dm",
+                _format_datetime(created_at),
+                _format_datetime(updated_at),
+                _format_datetime(last_message_at),
+                "active",
+            ),
+        )
+
+    def _insert_conversation_participant(
+        self,
+        conn: sqlite3.Connection,
+        conversation_id: str,
+        user_id: str,
+        *,
+        ignore_existing: bool,
+    ) -> None:
+        insert_clause = "INSERT OR IGNORE" if ignore_existing else "INSERT"
+        conn.execute(
+            f"""
+            {insert_clause} INTO conversation_participants (
+                conversation_id,
+                user_id,
+                joined_at,
+                last_read_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                conversation_id,
+                user_id,
+                _format_datetime(datetime.now()),
+                None,
+            ),
+        )
+
+    def _insert_direct_thread(
+        self,
+        conn: sqlite3.Connection,
+        conversation_id: str,
+        first_user_id: str,
+        second_user_id: str,
+        *,
+        ignore_existing: bool,
+    ) -> None:
+        user_one_id, user_two_id = sorted((first_user_id, second_user_id))
+        self._insert_conversation_participant(
+            conn,
+            conversation_id,
+            user_one_id,
+            ignore_existing=True,
+        )
+        self._insert_conversation_participant(
+            conn,
+            conversation_id,
+            user_two_id,
+            ignore_existing=True,
+        )
+
+        insert_clause = "INSERT OR IGNORE" if ignore_existing else "INSERT"
+        conn.execute(
+            f"""
+            {insert_clause} INTO direct_message_threads (
+                conversation_id,
+                user_one_id,
+                user_two_id
+            )
+            VALUES (?, ?, ?)
+            """,
+            (conversation_id, user_one_id, user_two_id),
+        )
+
+    def _ensure_direct_thread(
+        self,
+        conn: sqlite3.Connection,
+        first_user_id: str,
+        second_user_id: str,
+    ) -> str:
+        existing_id = self._find_direct_thread_id(conn, first_user_id, second_user_id)
+        if existing_id is not None:
+            return existing_id
+
+        conversation_id = str(uuid4())
+        self._insert_conversation(
+            conn,
+            conversation_id,
+            ignore_existing=False,
+        )
+        self._insert_direct_thread(
+            conn,
+            conversation_id,
+            first_user_id,
+            second_user_id,
+            ignore_existing=False,
+        )
+        return conversation_id
+
+    def _find_direct_thread_id(
+        self,
+        conn: sqlite3.Connection,
+        first_user_id: str,
+        second_user_id: str,
+    ) -> str | None:
+        user_one_id, user_two_id = sorted((first_user_id, second_user_id))
+        row = conn.execute(
+            """
+            SELECT conversation_id
+            FROM direct_message_threads
+            WHERE user_one_id = ? AND user_two_id = ?
+            """,
+            (user_one_id, user_two_id),
+        ).fetchone()
+        return row["conversation_id"] if row is not None else None
+
+    def _is_conversation_participant(
+        self,
+        conn: sqlite3.Connection,
+        conversation_id: str,
+        user_id: str,
+    ) -> bool:
+        row = conn.execute(
+            """
+            SELECT 1
+            FROM conversation_participants
+            WHERE conversation_id = ? AND user_id = ?
+            """,
+            (conversation_id, user_id),
+        ).fetchone()
+        return row is not None
+
+    def _active_user_row(
+        self,
+        conn: sqlite3.Connection,
+        user_id: str,
+    ) -> sqlite3.Row | None:
+        return conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE id = ? AND status = 'active'
+            """,
+            (user_id,),
+        ).fetchone()
+
+    def _dm_thread_row(
+        self,
+        conn: sqlite3.Connection,
+        current_user_id: str,
+        conversation_id: str,
+    ) -> sqlite3.Row | None:
+        return conn.execute(
+            """
+            SELECT
+                c.id AS conversation_id,
+                c.last_message_at,
+                other.id AS participant_id,
+                other.scsu_email,
+                other.first_name,
+                other.last_name,
+                other.major,
+                latest.content AS last_message,
+                latest.sent_at AS last_sent_at
+            FROM conversations c
+            JOIN conversation_participants mine
+                ON mine.conversation_id = c.id
+                AND mine.user_id = ?
+            JOIN direct_message_threads d
+                ON d.conversation_id = c.id
+            JOIN users other
+                ON other.id = CASE
+                    WHEN d.user_one_id = ? THEN d.user_two_id
+                    ELSE d.user_one_id
+                END
+            LEFT JOIN messages latest
+                ON latest.id = (
+                    SELECT m.id
+                    FROM messages m
+                    WHERE m.conversation_id = c.id
+                        AND m.status != 'deleted'
+                    ORDER BY m.sent_at DESC
+                    LIMIT 1
+                )
+            WHERE c.id = ?
+                AND c.status = 'active'
+            """,
+            (current_user_id, current_user_id, conversation_id),
+        ).fetchone()
+
+    def _user_search_result_from_row(self, row: sqlite3.Row) -> dict[str, str]:
+        full_name = _display_name(
+            User(
+                id=UUID(row["id"]),
+                scsuEmail=row["scsu_email"],
+                firstName=row["first_name"],
+                lastName=row["last_name"],
+                major=row["major"],
+            )
+        )
+        return {
+            "id": row["id"],
+            "name": full_name,
+            "email": row["scsu_email"],
+            "major": row["major"],
+        }
+
+    def _thread_summary_from_row(self, row: sqlite3.Row) -> dict[str, str]:
+        name = _display_name(
+            User(
+                id=UUID(row["participant_id"]),
+                scsuEmail=row["scsu_email"],
+                firstName=row["first_name"],
+                lastName=row["last_name"],
+                major=row["major"],
+            )
+        )
+        return {
+            "id": row["conversation_id"],
+            "participant_id": row["participant_id"],
+            "participant_name": name,
+            "participant_email": row["scsu_email"],
+            "participant_major": row["major"],
+            "last_message": row["last_message"] or "",
+            "last_sent_at": row["last_sent_at"] or "",
+        }
+
+    def _message_view_from_row(
+        self,
+        row: sqlite3.Row,
+        current_user_id: str,
+    ) -> dict[str, object]:
+        sender_name = "Unknown sender"
+        if row["sender_id"]:
+            sender_name = _display_name(
+                User(
+                    id=UUID(row["sender_id"]),
+                    scsuEmail=row["scsu_email"] or "",
+                    firstName=row["first_name"] or "",
+                    lastName=row["last_name"] or "",
+                )
+            )
+
+        return {
+            "id": row["id"],
+            "sender_id": row["sender_id"] or "",
+            "sender_name": sender_name,
+            "content": row["content"],
+            "sent_at": row["sent_at"],
+            "is_mine": row["sender_id"] == current_user_id,
+        }
 
     def _seed_defaults(self, conn: sqlite3.Connection) -> None:
         users = {
@@ -676,19 +1173,28 @@ class SQLiteStudyGroupStore:
         for group in (groups[0], groups[3]):
             self._insert_favorite(conn, users["test"], group)
 
-        for name in DEFAULT_CONVERSATIONS:
-            conn.execute(
-                "INSERT OR IGNORE INTO conversations (name) VALUES (?)",
-                (name,),
-            )
-
+        john_conversation_id = str(_stable_uuid("conversation:test-john-smith"))
+        john_created_at = datetime(2026, 5, 4, 10, 0)
+        self._insert_conversation(
+            conn,
+            john_conversation_id,
+            created_at=john_created_at,
+            last_message_at=datetime(2026, 5, 4, 10, 5),
+            ignore_existing=True,
+        )
+        self._insert_direct_thread(
+            conn,
+            john_conversation_id,
+            str(users["test"].id),
+            str(users["john"].id),
+            ignore_existing=True,
+        )
         self._insert_message(
             conn,
-            "John Smith",
+            john_conversation_id,
+            str(users["john"].id),
             Message(
                 id=_stable_uuid("message:john:incoming-1"),
-                sender=users["john"],
-                recipient=users["test"],
                 content="Hey, are we meeting today?",
                 sentAt=datetime(2026, 5, 4, 10, 0),
             ),
@@ -696,11 +1202,10 @@ class SQLiteStudyGroupStore:
         )
         self._insert_message(
             conn,
-            "John Smith",
+            john_conversation_id,
+            str(users["test"].id),
             Message(
                 id=_stable_uuid("message:john:outgoing-1"),
-                sender=users["test"],
-                recipient=users["john"],
                 content="Yes, at 3 PM in the library.",
                 sentAt=datetime(2026, 5, 4, 10, 5),
             ),
@@ -865,7 +1370,8 @@ class SQLiteStudyGroupStore:
     def _insert_message(
         self,
         conn: sqlite3.Connection,
-        conversation_name: str,
+        conversation_id: str,
+        sender_id: str,
         message: Message,
         *,
         ignore_existing: bool,
@@ -875,21 +1381,19 @@ class SQLiteStudyGroupStore:
             f"""
             {insert_clause} INTO messages (
                 id,
-                conversation_name,
+                conversation_id,
                 sender_id,
-                recipient_id,
                 content,
                 sent_at,
                 edited_at,
                 status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 str(message.id),
-                conversation_name,
-                str(message.sender.id) if message.sender else None,
-                str(message.recipient.id) if message.recipient else None,
+                conversation_id,
+                sender_id,
                 message.content,
                 _format_datetime(message.sentAt),
                 _format_datetime(message.editedAt),
@@ -1096,6 +1600,11 @@ def _parse_json_list(value: str | None) -> list[str]:
         return []
 
     return [str(item) for item in decoded]
+
+
+def _table_columns(conn: sqlite3.Connection, table_name: str) -> set[str]:
+    rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return {row["name"] for row in rows}
 
 
 def _display_name(user: User | None) -> str:
