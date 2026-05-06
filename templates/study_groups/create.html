@@ -14,28 +14,13 @@
     {% include "partials/_app_header.html" %}
 
     <main class="page-shell">
-        <section class="page-intro" aria-labelledby="page-title">
+        <section class="page-intro page-intro--simple" aria-labelledby="page-title">
             <div>
                 <p class="eyebrow">Study group hosting</p>
                 <h1 id="page-title">Create Study Group</h1>
                 <p class="page-intro__copy">
                     Open a course-focused study session for Southern students with clear time, place, and capacity details.
                 </p>
-            </div>
-
-            <div class="page-status" aria-label="Create group summary">
-                <div>
-                    <span class="page-status__value">Host</span>
-                    <span class="page-status__label">{{ current_user.getFullName() or current_user.firstName }}</span>
-                </div>
-                <div>
-                    <span class="page-status__value">SCSU</span>
-                    <span class="page-status__label">Campus access</span>
-                </div>
-                <div>
-                    <span class="page-status__value">Live</span>
-                    <span class="page-status__label">Added to listings</span>
-                </div>
             </div>
         </section>
 
@@ -228,30 +213,6 @@
                     </div>
                 </form>
             </section>
-
-            <aside class="create-rail" aria-labelledby="hosting-title">
-                <div class="section-heading section-heading--compact">
-                    <div>
-                        <p class="eyebrow">Before posting</p>
-                        <h2 id="hosting-title">Host Checklist</h2>
-                    </div>
-                </div>
-
-                <dl class="guideline-list">
-                    <div>
-                        <dt>Course focus</dt>
-                        <dd>Use the course code or subject students will recognize in listings.</dd>
-                    </div>
-                    <div>
-                        <dt>Meeting access</dt>
-                        <dd>Include a campus room, a virtual link, or both for hybrid sessions.</dd>
-                    </div>
-                    <div>
-                        <dt>Capacity</dt>
-                        <dd>Set a clear limit so available seats are shown accurately.</dd>
-                    </div>
-                </dl>
-            </aside>
         </div>
     </main>
 </body>

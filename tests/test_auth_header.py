@@ -86,7 +86,6 @@ class AuthHeaderTestCase(unittest.TestCase):
             {
                 "Home": "/home",
                 "Listings": "/listings",
-                "Create": "/create",
                 "Messages": "/messages",
                 "Profile": "/profile",
                 "Logout": "/logout",
@@ -94,7 +93,7 @@ class AuthHeaderTestCase(unittest.TestCase):
         )
 
     def test_header_marks_active_navigation_link(self) -> None:
-        parser = self.parsed_header(active_page="create")
+        parser = self.parsed_header(active_page="listings")
         active_links = [
             link
             for link in parser.links
@@ -102,7 +101,7 @@ class AuthHeaderTestCase(unittest.TestCase):
         ]
 
         self.assertEqual(len(active_links), 1)
-        self.assertEqual(active_links[0]["text"].strip(), "Create")
+        self.assertEqual(active_links[0]["text"].strip(), "Listings")
         self.assertIn("app-header__nav-link--active", active_links[0]["class"])
 
     def test_logged_out_app_pages_redirect_to_login(self) -> None:
