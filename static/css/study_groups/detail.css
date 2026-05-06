@@ -367,6 +367,10 @@ dd {
     align-items: start;
 }
 
+.detail-layout--single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .section-heading {
     display: flex;
     align-items: end;

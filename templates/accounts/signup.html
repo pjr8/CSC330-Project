@@ -30,23 +30,8 @@
                 <p class="eyebrow">Account access</p>
                 <h1 id="page-title">Create Your Account</h1>
                 <p class="page-intro__copy">
-                    Register with your Southern email, contact preference, and password to prepare for campus study group tools.
+                    Use your Southern email so classmates can find and contact you.
                 </p>
-            </div>
-
-            <div class="page-status" aria-label="Signup requirements summary">
-                <div>
-                    <span class="page-status__value">SCSU</span>
-                    <span class="page-status__label">Email required</span>
-                </div>
-                <div>
-                    <span class="page-status__value">Contact</span>
-                    <span class="page-status__label">Required</span>
-                </div>
-                <div>
-                    <span class="page-status__value">/home</span>
-                    <span class="page-status__label">Next step</span>
-                </div>
             </div>
         </section>
 
@@ -55,9 +40,9 @@
                 <div class="section-heading">
                     <div>
                         <p class="eyebrow">New student account</p>
-                        <h2 id="signup-heading">Registration Details</h2>
+                        <h2 id="signup-heading">Account details</h2>
                     </div>
-                    <p class="required-note">All fields are required.</p>
+                    <p class="required-note">All fields required.</p>
                 </div>
 
                 {% if error_summary %}
@@ -133,7 +118,7 @@
                                 required
                                 {% if errors.get('contactInfo') %}aria-invalid="true" aria-describedby="contactInfo-hint contactInfo-error"{% else %}aria-describedby="contactInfo-hint"{% endif %}
                             >{{ form_data.contactInfo }}</textarea>
-                            <p class="field-hint" id="contactInfo-hint">This appears on your profile so study partners know how to reach you.</p>
+                            <p class="field-hint" id="contactInfo-hint">Shown on your profile for study partners.</p>
                             {% if errors.get('contactInfo') %}
                                 <p class="field-error" id="contactInfo-error">{{ errors.contactInfo }}</p>
                             {% endif %}

@@ -177,7 +177,7 @@ class MessagesRouteTestCase(unittest.TestCase):
         self.assertIn("Rowan Patel", page)
         self.assertIn("Start a direct message", page)
         self.assertIn(
-            "This chat will be created after your first message is sent.",
+            "Send the first message to create this chat.",
             page,
         )
         self.assertIn('name="recipient_id" value="u-rowan"', page)

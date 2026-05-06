@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Study Group Listings | Southern Connecticut State University</title>
+    <title>Study Groups | Southern Connecticut State University</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/study_groups/listings.css') }}">
 </head>
@@ -17,33 +17,23 @@
         <section class="page-intro" aria-labelledby="page-title">
             <div>
                 <p class="eyebrow">Current semester</p>
-                <h1 id="page-title">Available Study Groups</h1>
+                <h1 id="page-title">Find Study Groups</h1>
                 <p class="page-intro__copy">
-                    Open peer-led sessions for Southern students, organized for quick review and enrollment.
+                    Search open sessions and join what fits your schedule.
                 </p>
             </div>
-
-            <div class="page-status" aria-label="Listings summary">
-                <div>
-                    <span class="page-status__value">{{ available_groups|length }}</span>
-                    <span class="page-status__label">Open groups</span>
-                </div>
-                <div>
-                    <span class="page-status__value">{{ favorite_groups|length }}</span>
-                    <span class="page-status__label">Saved</span>
-                </div>
-            </div>
+            <a class="button button--primary page-intro__action" href="{{ url_for('create_group') }}">Create study group</a>
         </section>
 
         <div class="listings-layout">
             <section class="listings-main" aria-labelledby="available-groups">
                 <div class="section-heading">
                     <div>
-                        <p class="eyebrow">Directory</p>
-                        <h2 id="available-groups">Open Study Groups</h2>
+                        <p class="eyebrow">Groups</p>
+                        <h2 id="available-groups">Open study groups</h2>
                     </div>
                     <p class="result-count">
-                        Showing <strong>{{ available_groups|length }}</strong> of <strong>{{ total_available_count }}</strong>
+                        Showing <strong>{{ available_groups|length }}</strong> of <strong>{{ total_available_count }}</strong> open groups
                     </p>
                 </div>
 
@@ -80,10 +70,12 @@
                     {% for group in available_groups %}
                         <article class="listing-row{% if group.is_favorited %} listing-row--favorite{% endif %}">
                             <div class="listing-row__body">
-                                <div class="listing-row__topline">
-                                    <span>{{ group.subject }}</span>
-                                    <span>{{ group.status }}</span>
-                                </div>
+	                                <div class="listing-row__topline">
+	                                    <span>{{ group.subject }}</span>
+                                        {% if group.is_favorited %}
+	                                        <span class="favorite-mark favorite-mark--active">Saved</span>
+                                        {% endif %}
+	                                </div>
 
                                 <div>
                                     <h3>{{ group.title }}</h3>
@@ -110,13 +102,10 @@
                                 </dl>
                             </div>
 
-                            <div class="listing-row__aside">
-                                <div>
-                                    <span class="favorite-mark{% if group.is_favorited %} favorite-mark--active{% endif %}">
-                                        {% if group.is_favorited %}Saved{% else %}Not saved{% endif %}
-                                    </span>
-                                    <p class="host-line">Hosted by {{ group.creator_name }}</p>
-                                </div>
+	                            <div class="listing-row__aside">
+	                                <div>
+	                                    <p class="host-line">Hosted by {{ group.creator_name }}</p>
+	                                </div>
                                 <div class="group-actions">
                                     {% if group.is_member %}
                                         <span class="button button--joined">{% if group.can_delete %}Owner{% else %}Joined{% endif %}</span>
@@ -173,7 +162,7 @@
                             <span>{{ group.location }}</span>
                         </article>
                     {% else %}
-                        <p class="empty-state empty-state--panel">No favorites have been saved yet.</p>
+	                        <p class="empty-state empty-state--panel">Saved groups will appear here.</p>
                     {% endfor %}
                 </div>
             </aside>

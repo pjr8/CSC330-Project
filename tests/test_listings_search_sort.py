@@ -41,6 +41,8 @@ class ListingsSearchSortTestCase(unittest.TestCase):
         self.assertIn("Title A-Z", page)
         self.assertIn("Subject A-Z", page)
         self.assertIn("Most seats", page)
+        self.assertIn('href="/create"', page)
+        self.assertIn("Create study group", page)
 
     def test_search_filters_open_groups_by_course_title_location_or_host(self) -> None:
         response = self.client.get("/listings?q=chemistry")

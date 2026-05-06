@@ -150,7 +150,7 @@ button {
 
 .page-intro {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 2rem;
     align-items: end;
     padding: 0.4rem 0 1.55rem;
@@ -199,38 +199,8 @@ h3 {
     font-size: 1rem;
 }
 
-.page-status {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-top: 4px solid var(--cyan);
-}
-
-.page-status div {
-    min-height: 78px;
-    display: grid;
-    align-content: center;
-    gap: 0.1rem;
-    padding: 0.85rem 1rem;
-    border-right: 1px solid var(--line);
-}
-
-.page-status div:last-child {
-    border-right: 0;
-}
-
-.page-status__value {
-    color: var(--reflex-blue);
-    font-size: 1.45rem;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.page-status__label {
-    color: var(--muted);
-    font-size: 0.9rem;
-    font-weight: 700;
+.page-intro__action {
+    min-width: 172px;
 }
 
 .listings-layout {
@@ -253,14 +223,12 @@ h3 {
     display: block;
 }
 
-.signed-in,
 .result-count {
     margin: 0;
     color: var(--muted);
     font-size: 0.95rem;
 }
 
-.signed-in strong,
 .result-count strong {
     color: var(--ink);
 }
@@ -350,9 +318,8 @@ h3 {
     font-weight: 700;
 }
 
-.listing-row__topline span:last-child {
+.listing-row__topline > span:first-child {
     color: var(--reflex-blue);
-    text-transform: capitalize;
 }
 
 .listing-row__description {
@@ -416,7 +383,7 @@ dd {
 }
 
 .host-line {
-    margin: 0.55rem 0 0;
+    margin: 0;
     color: var(--muted);
     font-size: 0.9rem;
 }
@@ -561,7 +528,6 @@ dd {
         justify-content: flex-start;
     }
 
-    .page-intro,
     .listings-layout {
         grid-template-columns: 1fr;
     }
@@ -589,20 +555,14 @@ dd {
         font-size: 2.05rem;
     }
 
-    .page-status,
     .listing-row,
+    .page-intro,
     .listing-facts {
         grid-template-columns: 1fr;
     }
 
-    .page-status div {
-        min-height: 64px;
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-    }
-
-    .page-status div:last-child {
-        border-bottom: 0;
+    .page-intro__action {
+        width: 100%;
     }
 
     .section-heading {

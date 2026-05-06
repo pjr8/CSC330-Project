@@ -190,40 +190,6 @@ h3 {
     font-size: 1rem;
 }
 
-.page-status {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-top: 4px solid var(--cyan);
-}
-
-.page-status div {
-    min-height: 78px;
-    display: grid;
-    align-content: center;
-    gap: 0.1rem;
-    padding: 0.85rem 1rem;
-    border-right: 1px solid var(--line);
-}
-
-.page-status div:last-child {
-    border-right: 0;
-}
-
-.page-status__value {
-    color: var(--reflex-blue);
-    font-size: 1.45rem;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.page-status__label {
-    color: var(--muted);
-    font-size: 0.9rem;
-    font-weight: 700;
-}
-
 .create-layout {
     display: grid;
     grid-template-columns: minmax(0, 860px);
@@ -393,35 +359,6 @@ textarea[aria-invalid="true"] {
     background: var(--surface-blue);
 }
 
-.create-rail {
-    position: sticky;
-    top: 1rem;
-    padding: 1rem;
-    background: var(--surface-blue);
-    border: 1px solid #c7ddfb;
-    border-top: 4px solid var(--cyan);
-    border-radius: 6px;
-}
-
-.guideline-list {
-    display: grid;
-    gap: 0;
-    margin: 0;
-    background: var(--white);
-    border: 1px solid var(--line);
-}
-
-.guideline-list div {
-    display: grid;
-    gap: 0.2rem;
-    padding: 0.85rem;
-    border-bottom: 1px solid var(--line);
-}
-
-.guideline-list div:last-child {
-    border-bottom: 0;
-}
-
 dt {
     margin: 0;
     color: var(--medium-blue);
@@ -451,13 +388,8 @@ dd {
         justify-content: flex-start;
     }
 
-    .page-intro,
     .create-layout {
         grid-template-columns: 1fr;
-    }
-
-    .create-rail {
-        position: static;
     }
 }
 
@@ -480,19 +412,8 @@ dd {
         font-size: 2.05rem;
     }
 
-    .page-status,
     .field-grid {
         grid-template-columns: 1fr;
-    }
-
-    .page-status div {
-        min-height: 64px;
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-    }
-
-    .page-status div:last-child {
-        border-bottom: 0;
     }
 
     .section-heading {

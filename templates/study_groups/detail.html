@@ -30,12 +30,12 @@
                 {% if group.join_state == "joined" %}
                     <span class="state-badge state-badge--joined">{% if group.can_delete %}Owner{% else %}Joined{% endif %}</span>
                     {% if group.can_delete %}
-                        <p>You host this study group. Delete the group to remove it from listings.</p>
+                        <p>You host this study group.</p>
                         <form class="join-form" method="post" action="{{ url_for('study_groups.delete_group', group_id=group.id) }}">
                             <button class="button button--danger" type="submit">Delete group</button>
                         </form>
                     {% else %}
-                        <p>You are on this study group roster.</p>
+                        <p>You are on this roster.</p>
                         <form class="join-form" method="post" action="{{ url_for('study_groups.leave_group', group_id=group.id) }}">
                             <input type="hidden" name="next" value="detail">
                             <button class="button button--danger" type="submit">Leave group</button>
@@ -43,7 +43,7 @@
                     {% endif %}
                 {% elif group.join_state == "join" %}
                     <span class="state-badge">Open</span>
-                    <p>Reserve a seat in this group and access member-only meeting details.</p>
+                    <p>Join to reserve a seat and view member-only meeting details.</p>
                     <form class="join-form" method="post" action="{{ url_for('study_groups.join_group', group_id=group.id) }}">
                         <input type="hidden" name="next" value="detail">
                         <button class="button button--primary" type="submit">Join group</button>
@@ -83,7 +83,7 @@
             </dl>
         </section>
 
-        <div class="detail-layout">
+        <div class="detail-layout{% if not group.meeting_link %} detail-layout--single{% endif %}">
             <section class="detail-section" aria-labelledby="roster-title">
                 <div class="section-heading">
                     <div>
@@ -110,23 +110,22 @@
                 </div>
             </section>
 
-            <aside class="access-panel" aria-labelledby="access-title">
-                <div class="section-heading section-heading--compact">
-                    <div>
-                        <p class="eyebrow">Member access</p>
-                        <h2 id="access-title">Virtual Link</h2>
+            {% if group.meeting_link %}
+                <aside class="access-panel" aria-labelledby="access-title">
+                    <div class="section-heading section-heading--compact">
+                        <div>
+                            <p class="eyebrow">Member access</p>
+                            <h2 id="access-title">Meeting link</h2>
+                        </div>
                     </div>
-                </div>
 
-                {% if group.show_meeting_link %}
-                    <p class="access-panel__copy">Member-only virtual access is available for this group.</p>
-                    <a class="button button--primary" href="{{ group.meeting_link }}">Open virtual meeting</a>
-                {% elif group.meeting_link %}
-                    <p class="access-panel__copy">Join this group to view the member-only virtual meeting link.</p>
-                {% else %}
-                    <p class="access-panel__copy">No virtual meeting link is listed for this study group.</p>
-                {% endif %}
-            </aside>
+                    {% if group.show_meeting_link %}
+                        <a class="button button--primary" href="{{ group.meeting_link }}">Open meeting link</a>
+                    {% else %}
+                        <p class="access-panel__copy">Join this group to view the meeting link.</p>
+                    {% endif %}
+                </aside>
+            {% endif %}
         </div>
     </main>
 </body>

@@ -59,7 +59,7 @@ class StudyGroupDetailTestCase(unittest.TestCase):
         self.assertIn("Alex Mitchell", page)
         self.assertIn("Join group", page)
         self.assertIn('name="next" value="detail"', page)
-        self.assertIn("Join this group to view the member-only virtual meeting link.", page)
+        self.assertIn("Join this group to view the meeting link.", page)
         self.assertNotIn("https://example.edu/scsu-bio211-review", page)
 
     def test_member_detail_shows_virtual_link_and_joined_state(self) -> None:
@@ -70,7 +70,7 @@ class StudyGroupDetailTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         page = response.get_data(as_text=True)
         self.assertIn("Joined", page)
-        self.assertIn("Open virtual meeting", page)
+        self.assertIn("Open meeting link", page)
         self.assertIn("https://example.edu/scsu-history-circle", page)
 
     def test_creator_detail_shows_delete_instead_of_leave(self) -> None:
@@ -112,8 +112,8 @@ class StudyGroupDetailTestCase(unittest.TestCase):
         detail_response = self.client.get(f"/study-groups/{group.id}")
         page = detail_response.get_data(as_text=True)
         self.assertIn("Join group", page)
-        self.assertIn("Join this group to view the member-only virtual meeting link.", page)
-        self.assertNotIn("Open virtual meeting", page)
+        self.assertIn("Join this group to view the meeting link.", page)
+        self.assertNotIn("Open meeting link", page)
 
     def test_creator_can_delete_group_from_detail(self) -> None:
         group = self._group_named("Calculus II Problem Session")
