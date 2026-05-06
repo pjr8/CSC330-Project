@@ -19,6 +19,8 @@
             </a>
 
             <nav class="top-nav" aria-label="Primary navigation">
+                <a class="top-nav__link" href="/browse">Browse</a>
+                <a class="top-nav__link" href="/messages">Messages</a>
                 <a class="top-nav__link" href="/profile">Profile</a>
                 <a class="top-nav__link top-nav__link--quiet" href="{{ url_for('logout') }}">Logout</a>
             </nav>
@@ -40,6 +42,21 @@
                 <strong>{{ user.firstName }}</strong>
                 <span>{{ user.major }}</span>
             </aside>
+        </section>
+
+        <section class="dashboard-strip" aria-label="Dashboard summary">
+            <div>
+                <strong>{{ groups|length }}</strong>
+                <span>Upcoming groups</span>
+            </div>
+            <div>
+                <strong>Messages</strong>
+                <span>Coordinate with classmates</span>
+            </div>
+            <div>
+                <strong>Profile</strong>
+                <span>Keep your study info current</span>
+            </div>
         </section>
 
         <section class="quick-actions" aria-labelledby="navigation-title">
@@ -66,6 +83,30 @@
                     <strong>Messages</strong>
                     <span>Coordinate meeting details and keep group communication organized.</span>
                 </a>
+            </div>
+        </section>
+
+        <section class="preview-section" aria-labelledby="upcoming-title">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Preview</p>
+                    <h2 id="upcoming-title">Upcoming study groups</h2>
+                </div>
+                <a class="button button--text" href="/browse">View all</a>
+            </div>
+
+            <div class="preview-list">
+                {% for group in groups %}
+                    <article class="preview-item">
+                        <div>
+                            <span>{{ group.subject }}</span>
+                            <h3>{{ group.title }}</h3>
+                        </div>
+                        <p>{{ group.location }}</p>
+                    </article>
+                {% else %}
+                    <p class="empty-state">No upcoming groups are available yet.</p>
+                {% endfor %}
             </div>
         </section>
     </main>

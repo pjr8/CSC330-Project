@@ -1,72 +1,71 @@
 {% extends "base.html" %}
 
-{% block title %}Profile{% endblock %}
+{% block title %}Profile | SCSU Study Group Scheduler{% endblock %}
 
 {% block content %}
+<section class="profile-hero" aria-labelledby="profile-title">
+  <div class="profile-hero__identity">
+    <img
+      src="{{ user.profileImageUrl if user.profileImageUrl else url_for('static', filename='img/default-user.svg') }}"
+      class="profile-avatar"
+      alt="{{ user.firstName }} {{ user.lastName }} profile picture"
+      width="128"
+      height="128">
 
-<div class="row justify-content-center">
-
-  <div class="col-md-8">
-
-    <!-- PROFILE CARD -->
-    <div class="card p-4 text-center">
-
-      <img src="{{ user.profileImageUrl if user.profileImageUrl else url_for('static', filename='img/default-user.svg') }}"
-           class="rounded-circle mx-auto profile-avatar"
-           alt="{{ user.firstName }} {{ user.lastName }} profile picture"
-           width="120" height="120">
-
-      <h3 class="profile-name">{{ user.firstName }} {{ user.lastName }}</h3>
-
-      <p class="text-muted">{{ user.major }}</p>
-
-      <p>{{ user.bio }}</p>
-
-      <a href="{{ url_for('update_profile') }}"
-         class="btn btn-outline-primary btn-sm mt-2">
-        Update Profile
-      </a>
-
-    </div>
-
-<!-- INTERESTS + CONTACT ROW -->
-<div class="row mt-3 g-3">
-
-  <!-- INTERESTS -->
-  <div class="col-md-6">
-    <div class="card p-4 h-100 profile-panel">
-
-      <h5>Interests</h5>
-
-      {% if user.interests %}
-        <div class="mt-2">
-          {% for interest in user.interests %}
-            <span class="badge me-1 mb-1">{{ interest }}</span>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="text-muted">No interests yet</p>
-      {% endif %}
-
+    <div>
+      <p class="eyebrow">Student profile</p>
+      <h1 id="profile-title">{{ user.firstName }} {{ user.lastName }}</h1>
+      <p class="profile-major">{{ user.major if user.major else "SCSU student" }}</p>
     </div>
   </div>
 
-  <!-- CONTACT INFO -->
-  <div class="col-md-6">
-    <div class="card p-4 h-100 profile-panel">
+  <a href="{{ url_for('update_profile') }}" class="button button--primary">Edit profile</a>
+</section>
 
-      <h5>Best Ways to Reach Me</h5>
-
-      {% if user.contactInfo %}
-        <p class="mt-2">{{ user.contactInfo }}</p>
-      {% else %}
-        <p class="text-muted mt-2">No contact info added yet</p>
-      {% endif %}
-
+<section class="profile-grid" aria-label="Profile details">
+  <article class="profile-card profile-card--wide">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">About</p>
+        <h2>Bio</h2>
+      </div>
     </div>
-  </div>
 
-</div>
- 
+    {% if user.bio %}
+      <p class="profile-copy">{{ user.bio }}</p>
+    {% else %}
+      <p class="empty-state">Add a short bio so classmates know how you like to study.</p>
+    {% endif %}
+  </article>
 
+  <article class="profile-card">
+    <div class="section-heading section-heading--compact">
+      <p class="eyebrow">Focus areas</p>
+      <h2>Interests</h2>
+    </div>
+
+    {% if user.interests %}
+      <div class="tag-list">
+        {% for interest in user.interests %}
+          <span class="tag">{{ interest }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state empty-state--compact">No interests added yet.</p>
+    {% endif %}
+  </article>
+
+  <article class="profile-card">
+    <div class="section-heading section-heading--compact">
+      <p class="eyebrow">Contact</p>
+      <h2>Best ways to reach me</h2>
+    </div>
+
+    {% if user.contactInfo %}
+      <p class="profile-copy">{{ user.contactInfo }}</p>
+    {% else %}
+      <p class="empty-state empty-state--compact">No contact info added yet.</p>
+    {% endif %}
+  </article>
+</section>
 {% endblock %}

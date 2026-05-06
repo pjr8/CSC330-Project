@@ -1,185 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SCSU Messages</title>
-
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #FFFFFF;
-        }
-
-        .header {
-            background: #003399;
-            color: white;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .header-brand {
-            display: flex;
-            align-items: center;
-        }
-
-        .header img {
-            height: 40px;
-            margin-right: 15px;
-        }
-
-        .home-link {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            border: 1px solid rgba(255, 255, 255, 0.65);
-            border-radius: 6px;
-            padding: 8px 14px;
-        }
-
-        .home-link:hover {
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .container {
-            display: flex;
-            height: 90vh;
-        }
-
-        .sidebar {
-            width: 30%;
-            border-right: 1px solid #ccc;
-            background: #f7f9fc;
-            padding: 10px;
-        }
-
-        .chat-user {
-            display: block;
-            padding: 12px;
-            margin-bottom: 5px;
-            background: white;
-            border-radius: 5px;
-            cursor: pointer;
-            color: #222;
-            text-decoration: none;
-        }
-
-        .chat-user.active {
-            background: #003399;
-            color: white;
-        }
-
-        .chat {
-            width: 70%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #ccc;
-            font-weight: bold;
-            color: #003399;
-        }
-
-        .messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .message {
-            margin: 10px 0;
-            max-width: 60%;
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        .sent {
-            background: #003399;
-            color: white;
-            margin-left: auto;
-        }
-
-        .received {
-            background: #e6e6e6;
-        }
-
-        .empty-chat {
-            color: #777;
-            text-align: center;
-            margin-top: 30px;
-        }
-
-        .input-box {
-            display: flex;
-            padding: 15px;
-            border-top: 1px solid #ccc;
-        }
-
-        input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        button {
-            margin-left: 10px;
-            padding: 12px 20px;
-            background: #003399;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #016ABD;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+<body class="messages-page">
+    <a class="skip-link" href="#messages-main">Skip to messages</a>
 
-<body>
-<div class="header">
-    <div class="header-brand">
-        <img src="{{ url_for('static', filename='images/scsu-logo.png') }}" alt="SCSU Logo">
-        <h2>Student Messaging Portal</h2>
-    </div>
-    <a class="home-link" href="{{ url_for('home') }}">Back to Home</a>
-</div>
-
-<div class="container">
-    <div class="sidebar">
-        {% for contact in contacts %}
-            <a href="{{ url_for('messages', user=contact.getFullName()) }}"
-               class="chat-user {% if current_user == contact.getFullName() %}active{% endif %}">
-                {{ contact.getFullName() }}
+    <header class="site-header" aria-label="SCSU Study Group Scheduler">
+        <div class="site-header__inner">
+            <a class="brand-logo" href="/home" aria-label="Southern Connecticut State University Study Group Scheduler home">
+                <img
+                    src="{{ url_for('static', filename='images/scsu-logo.png') }}"
+                    alt="Southern Connecticut State University"
+                    class="brand-logo__image">
             </a>
-        {% endfor %}
-    </div>
 
-    <div class="chat">
-        <div class="chat-header">{{ current_user }}</div>
-
-        <div class="messages">
-            {% if messages %}
-                {% for msg in messages %}
-                    <div class="message {{ 'sent' if msg.sender.getFullName() == signed_in_user else 'received' }}">
-                        {{ msg.content }}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-chat">No messages yet.</div>
-            {% endif %}
+            <nav class="top-nav" aria-label="Primary navigation">
+                <a class="top-nav__link" href="{{ url_for('home') }}">Home</a>
+                <a class="top-nav__link" href="/profile">Profile</a>
+                <a class="top-nav__link top-nav__link--quiet" href="{{ url_for('logout') }}">Logout</a>
+            </nav>
         </div>
+    </header>
 
-        <form method="POST" class="input-box">
-            <input type="text" name="message" placeholder="Type your message..." required>
-            <button type="submit">Send</button>
-        </form>
-    </div>
-</div>
+    <main id="messages-main" class="message-shell">
+        <section class="message-intro" aria-labelledby="message-title">
+            <div>
+                <p class="eyebrow">Messages</p>
+                <h1 id="message-title">Coordinate with classmates</h1>
+                <p class="message-intro__copy">
+                    Keep study plans, meeting details, and quick follow-ups in one focused workspace.
+                </p>
+            </div>
+            <a class="button button--primary" href="{{ url_for('study_groups.listings') }}">Browse groups</a>
+        </section>
+
+        <section class="messenger" aria-label="Student messaging">
+            <aside class="conversation-list" aria-label="Conversations">
+                <div class="conversation-list__header">
+                    <div>
+                        <p class="eyebrow">Inbox</p>
+                        <h2>Conversations</h2>
+                    </div>
+                    <span class="conversation-count">{{ contacts|length }}</span>
+                </div>
+
+                <div class="contact-stack">
+                    {% for contact in contacts %}
+                        {% set contact_name = contact.getFullName() %}
+                        <a href="{{ url_for('messages', user=contact_name) }}"
+                           class="contact-card {% if current_user == contact_name %}active{% endif %}">
+                            <span class="contact-avatar" aria-hidden="true">
+                                {{ contact.firstName[:1] }}{{ contact.lastName[:1] }}
+                            </span>
+                            <span class="contact-card__body">
+                                <strong>{{ contact_name }}</strong>
+                                <span>{{ contact.major or "SCSU student" }}</span>
+                            </span>
+                        </a>
+                    {% else %}
+                        <div class="empty-panel">
+                            <strong>No classmates yet</strong>
+                            <span>Once more students join, conversations will appear here.</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </aside>
+
+            <section class="chat-panel" aria-label="Current conversation">
+                <header class="chat-panel__header">
+                    {% if current_user %}
+                        <span class="contact-avatar contact-avatar--large" aria-hidden="true">
+                            {{ current_user.split(" ")[0][:1] }}{{ current_user.split(" ")[-1][:1] }}
+                        </span>
+                        <div>
+                            <p class="eyebrow">Chatting with</p>
+                            <h2>{{ current_user }}</h2>
+                        </div>
+                    {% else %}
+                        <div>
+                            <p class="eyebrow">Chat</p>
+                            <h2>Select a classmate</h2>
+                        </div>
+                    {% endif %}
+                </header>
+
+                <div class="message-stream" aria-live="polite">
+                    {% if messages %}
+                        {% for msg in messages %}
+                            {% set is_sent = msg.sender.getFullName() == signed_in_user %}
+                            <article class="chat-message {{ 'chat-message--sent' if is_sent else 'chat-message--received' }}">
+                                <div class="chat-message__meta">
+                                    <span>{{ "You" if is_sent else msg.sender.getFullName() }}</span>
+                                    <time datetime="{{ msg.sentAt.isoformat() }}">{{ msg.sentAt.strftime("%b %-d, %I:%M %p") }}</time>
+                                </div>
+                                <p>{{ msg.content }}</p>
+                            </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-chat">
+                            <strong>No messages yet</strong>
+                            <span>Send the first note to start coordinating.</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if current_user %}
+                    <form method="POST" class="message-composer">
+                        <label class="visually-hidden" for="message">Message</label>
+                        <input id="message" type="text" name="message" placeholder="Type your message..." autocomplete="off" required>
+                        <button class="button button--primary" type="submit">Send</button>
+                    </form>
+                {% endif %}
+            </section>
+        </section>
+    </main>
 </body>
 </html>

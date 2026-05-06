@@ -9,56 +9,70 @@
 <body class="auth-page">
     <main class="auth-shell">
         <section class="auth-panel" aria-labelledby="register-title">
-            <div class="auth-brand">
-                <img
-                    src="{{ url_for('static', filename='images/scsu-logo.png') }}"
-                    alt="Southern Connecticut State University"
-                    class="auth-brand__logo">
+            <div class="auth-card">
+                <div class="auth-brand">
+                    <img
+                        src="{{ url_for('static', filename='images/scsu-logo.png') }}"
+                        alt="Southern Connecticut State University"
+                        class="auth-brand__logo">
+                </div>
+
+                <div class="auth-heading">
+                    <p class="eyebrow">SCSU Study Group Scheduler</p>
+                    <h1 id="register-title">Create account</h1>
+                    <p>Register with your campus email so classmates can find and message you.</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('register_user') }}" class="auth-form">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="firstName">First name</label>
+                            <input id="firstName" type="text" name="firstName" value="{{ request.form.get('firstName', '') }}">
+                        </div>
+
+                        <div class="form-field">
+                            <label for="lastName">Last name</label>
+                            <input id="lastName" type="text" name="lastName" value="{{ request.form.get('lastName', '') }}">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="major">Major</label>
+                        <input id="major" type="text" name="major" value="{{ request.form.get('major', '') }}">
+                    </div>
+
+                    <div class="form-field">
+                        <label for="email">SCSU Email</label>
+                        <input id="email" type="email" name="email" placeholder="name@southernct.edu" value="{{ request.form.get('email', '') }}">
+                    </div>
+
+                    <div class="form-field">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password">
+                    </div>
+
+                    <button class="button button--primary auth-submit" type="submit">Register</button>
+                </form>
+
+                {% if error %}
+                    <p class="form-error">{{ error }}</p>
+                {% endif %}
+
+                <p class="auth-footer">
+                    Already have an account?
+                    <a href="{{ url_for('login') }}">Back to login</a>
+                </p>
             </div>
 
-            <div class="auth-heading">
-                <p class="eyebrow">SCSU Study Group Scheduler</p>
-                <h1 id="register-title">Create Account</h1>
-                <p>Register with your campus email so your account is saved in the database.</p>
-            </div>
-
-            <form method="POST" action="{{ url_for('register_user') }}" class="auth-form">
-                <div class="form-field">
-                    <label for="firstName">First Name</label>
-                    <input id="firstName" type="text" name="firstName" value="{{ request.form.get('firstName', '') }}">
+            <aside class="auth-aside" aria-label="Registration highlights">
+                <p class="eyebrow">Get started</p>
+                <h2>Create a profile classmates can recognize.</h2>
+                <div class="auth-aside__list">
+                    <span>Use your SCSU email</span>
+                    <span>Add your major</span>
+                    <span>Update details anytime</span>
                 </div>
-
-                <div class="form-field">
-                    <label for="lastName">Last Name</label>
-                    <input id="lastName" type="text" name="lastName" value="{{ request.form.get('lastName', '') }}">
-                </div>
-
-                <div class="form-field">
-                    <label for="major">Major</label>
-                    <input id="major" type="text" name="major" value="{{ request.form.get('major', '') }}">
-                </div>
-
-                <div class="form-field">
-                    <label for="email">SCSU Email</label>
-                    <input id="email" type="email" name="email" value="{{ request.form.get('email', '') }}">
-                </div>
-
-                <div class="form-field">
-                    <label for="password">Password</label>
-                    <input id="password" type="password" name="password">
-                </div>
-
-                <button class="button button--primary auth-submit" type="submit">Register</button>
-            </form>
-
-            {% if error %}
-                <p class="form-error">{{ error }}</p>
-            {% endif %}
-
-            <p class="auth-footer">
-                Already have an account?
-                <a href="{{ url_for('login') }}">Back to login</a>
-            </p>
+            </aside>
         </section>
     </main>
 </body>
