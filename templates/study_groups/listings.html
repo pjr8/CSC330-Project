@@ -32,10 +32,6 @@
                     <span class="page-status__value">{{ favorite_groups|length }}</span>
                     <span class="page-status__label">Saved</span>
                 </div>
-                <div>
-                    <span class="page-status__value">Live</span>
-                    <span class="page-status__label">Preview mode</span>
-                </div>
             </div>
         </section>
 
@@ -46,8 +42,39 @@
                         <p class="eyebrow">Directory</p>
                         <h2 id="available-groups">Open Study Groups</h2>
                     </div>
-                    <p class="signed-in">Signed in as <strong>{{ current_user.getFullName() }}</strong></p>
+                    <p class="result-count">
+                        Showing <strong>{{ available_groups|length }}</strong> of <strong>{{ total_available_count }}</strong>
+                    </p>
                 </div>
+
+                <form class="listing-controls" method="get" action="{{ url_for('study_groups.listings') }}" role="search">
+                    <div class="control-field control-field--search">
+                        <label for="listing-search">Search groups</label>
+                        <input
+                            id="listing-search"
+                            name="q"
+                            type="search"
+                            placeholder="Course, title, location, or host"
+                            value="{{ search_query }}"
+                        >
+                    </div>
+
+                    <div class="control-field">
+                        <label for="listing-sort">Sort by</label>
+                        <select id="listing-sort" name="sort">
+                            {% for option in sort_options %}
+                                <option value="{{ option.value }}"{% if option.value == sort_key %} selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="listing-controls__actions">
+                        <button class="button button--primary" type="submit">Apply</button>
+                        {% if search_query or sort_key != "soonest" %}
+                            <a class="button button--text" href="{{ url_for('study_groups.listings') }}">Clear</a>
+                        {% endif %}
+                    </div>
+                </form>
 
                 <div class="group-list">
                     {% for group in available_groups %}
@@ -114,7 +141,13 @@
                             </div>
                         </article>
                     {% else %}
-                        <p class="empty-state">No open study groups are available right now.</p>
+                        <p class="empty-state">
+                            {% if search_query %}
+                                No open study groups match your search.
+                            {% else %}
+                                No open study groups are available right now.
+                            {% endif %}
+                        </p>
                     {% endfor %}
                 </div>
             </section>

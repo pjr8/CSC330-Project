@@ -144,6 +144,10 @@ button {
     border-bottom: 1px solid var(--line);
 }
 
+.page-intro--simple {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .eyebrow {
     margin: 0 0 0.25rem;
     color: var(--medium-blue);
@@ -222,7 +226,8 @@ h3 {
 
 .create-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 315px;
+    grid-template-columns: minmax(0, 860px);
+    justify-content: center;
     gap: 1.35rem;
     align-items: start;
     padding-top: 1.45rem;

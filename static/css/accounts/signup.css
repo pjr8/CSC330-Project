@@ -215,7 +215,8 @@ h3 {
 
 .signup-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 315px;
+    grid-template-columns: minmax(0, 860px);
+    justify-content: center;
     gap: 1.35rem;
     align-items: start;
     padding-top: 1.45rem;
@@ -260,6 +261,7 @@ h3 {
 
 .field {
     display: grid;
+    align-content: start;
     gap: 0.35rem;
     min-width: 0;
 }
@@ -281,6 +283,10 @@ textarea {
     background: var(--white);
     color: var(--ink);
     padding: 0.65rem 0.75rem;
+}
+
+input {
+    min-height: 46px;
 }
 
 textarea {
