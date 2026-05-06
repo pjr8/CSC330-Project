@@ -8,10 +8,12 @@ from flask import Flask, redirect, render_template, request, session, url_for
 
 from accounts import accounts_bp
 from app_store import SQLiteStudyGroupStore
+from messages import messages_bp
 from study_groups import study_groups_bp
 
 
 CREATE_GROUP_MODALITIES = ("In person", "Hybrid", "Virtual")
+PUBLIC_ENDPOINTS = {"index", "register", "accounts.signup", "static"}
 CREATE_GROUP_REQUIRED_FIELDS = {
     "title": "Enter a study group title.",
     "subject": "Enter the course or subject.",
@@ -43,12 +45,33 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     app.config.setdefault("ACCOUNT_STORE", store)
     app.register_blueprint(accounts_bp)
     app.register_blueprint(study_groups_bp)
+    app.register_blueprint(messages_bp)
 
     def data_store() -> SQLiteStudyGroupStore:
         return app.config["DATA_STORE"]
 
     def current_user():
-        return data_store().user_for_session(session.get("user_id"))
+        return data_store().get_user(session.get("user_id"))
+
+    @app.context_processor
+    def inject_session_user():
+        user = current_user()
+        return {
+            "is_logged_in": user is not None,
+            "session_user": user,
+        }
+
+    @app.before_request
+    def require_login_for_app_pages():
+        endpoint = request.endpoint
+        if endpoint is None or endpoint in PUBLIC_ENDPOINTS:
+            return None
+
+        if current_user() is not None:
+            return None
+
+        session.clear()
+        return redirect(url_for("index"))
 
     @app.route("/", methods=["GET", "POST"])
     def index():
@@ -68,6 +91,9 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
                 return redirect(url_for("home"))
 
             return render_template("login.html", error="Invalid email or password.")
+
+        if current_user() is not None:
+            return redirect(url_for("home"))
 
         return render_template("login.html")
 
@@ -127,33 +153,6 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     @app.route("/browse")
     def browse_groups():
         return redirect(url_for("study_groups.listings"))
-
-    @app.route("/messages", methods=["GET", "POST"])
-    def messages():
-        store = data_store()
-        user = current_user()
-        conversations = store.list_conversations()
-        conversation_name = request.args.get("user") or (
-            conversations[0] if conversations else "John Smith"
-        )
-
-        if request.method == "POST":
-            store.add_outgoing_message(
-                conversation_name,
-                request.form.get("message", ""),
-                str(user.id),
-            )
-            return redirect(url_for("messages", user=conversation_name))
-
-        if conversation_name not in conversations:
-            conversations.append(conversation_name)
-
-        return render_template(
-            "messages.html",
-            messages=store.messages_for_conversation(conversation_name, str(user.id)),
-            conversations=conversations,
-            current_user=conversation_name,
-        )
 
     @app.route("/profile")
     def profile():

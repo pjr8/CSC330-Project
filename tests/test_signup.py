@@ -21,11 +21,9 @@ class SignupTestCase(unittest.TestCase):
             "firstName": "Jordan",
             "lastName": "Rivera",
             "scsuEmail": "jordan.rivera@southernct.edu",
+            "contactInfo": "jordan.rivera@southernct.edu",
             "password": "study-pass-123",
             "confirmPassword": "study-pass-123",
-            "major": "Computer Science",
-            "interests": "Software design, Mathematics, Research writing",
-            "bio": "I like building campus tools and reviewing software projects.",
         }
         payload.update(overrides)
         return payload
@@ -39,13 +37,14 @@ class SignupTestCase(unittest.TestCase):
             "firstName",
             "lastName",
             "scsuEmail",
+            "contactInfo",
             "password",
             "confirmPassword",
-            "major",
-            "interests",
-            "bio",
         ):
             self.assertIn(f'name="{field_name}"', page)
+
+        for field_name in ("major", "interests", "bio"):
+            self.assertNotIn(f'name="{field_name}"', page)
 
     def test_missing_fields_return_error(self) -> None:
         response = self.client.post("/signup", data=self.valid_payload(firstName=""))
@@ -54,6 +53,20 @@ class SignupTestCase(unittest.TestCase):
         page = response.get_data(as_text=True)
         self.assertIn("Please complete all required fields.", page)
         self.assertIn('aria-invalid="true"', page)
+        self.assertIsNone(self.store.find_by_email("jordan.rivera@southernct.edu"))
+
+    def test_contact_info_is_required(self) -> None:
+        response = self.client.post(
+            "/signup",
+            data=self.valid_payload(contactInfo=""),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertIn("Please complete all required fields.", page)
+        self.assertIn('id="contactInfo"', page)
+        self.assertIn('aria-invalid="true"', page)
+        self.assertIsNone(self.store.find_by_email("jordan.rivera@southernct.edu"))
 
     def test_invalid_email_domains_are_rejected(self) -> None:
         invalid_addresses = (
@@ -75,6 +88,53 @@ class SignupTestCase(unittest.TestCase):
                 )
                 self.assertIsNone(self.store.find_by_email(email))
 
+    def test_invalid_passwords_are_rejected_without_creating_user(self) -> None:
+        cases = (
+            (
+                "missing password",
+                {"password": ""},
+                "Please complete all required fields.",
+            ),
+            (
+                "whitespace password",
+                {"password": "        "},
+                "Please complete all required fields.",
+            ),
+            (
+                "leading password space",
+                {
+                    "password": " study-pass-123",
+                    "confirmPassword": " study-pass-123",
+                },
+                "Password cannot start or end with spaces.",
+            ),
+            (
+                "trailing password space",
+                {
+                    "password": "study-pass-123 ",
+                    "confirmPassword": "study-pass-123 ",
+                },
+                "Password cannot start or end with spaces.",
+            ),
+            (
+                "short password",
+                {"password": "short7", "confirmPassword": "short7"},
+                "Password must be at least 8 characters.",
+            ),
+        )
+
+        for index, (name, overrides, expected_message) in enumerate(cases):
+            email = f"jordan.rivera{index}@southernct.edu"
+            with self.subTest(name=name):
+                response = self.client.post(
+                    "/signup",
+                    data=self.valid_payload(scsuEmail=email, **overrides),
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(expected_message, response.get_data(as_text=True))
+                self.assertIsNone(self.store.find_by_email(email))
+
     def test_password_mismatch_is_rejected(self) -> None:
         response = self.client.post(
             "/signup",
@@ -88,7 +148,12 @@ class SignupTestCase(unittest.TestCase):
     def test_valid_signup_creates_user_and_redirects_to_home(self) -> None:
         response = self.client.post(
             "/signup",
-            data=self.valid_payload(scsuEmail="  Jordan.Rivera@SOUTHERNCT.EDU  "),
+            data=self.valid_payload(
+                scsuEmail="  Jordan.Rivera@SOUTHERNCT.EDU  ",
+                major="Computer Science",
+                interests="Software design, Mathematics, Research writing",
+                bio="I like building campus tools and reviewing software projects.",
+            ),
         )
 
         self.assertEqual(response.status_code, 302)
@@ -100,15 +165,10 @@ class SignupTestCase(unittest.TestCase):
         self.assertEqual(user.scsuEmail, "jordan.rivera@southernct.edu")
         self.assertEqual(user.firstName, "Jordan")
         self.assertEqual(user.lastName, "Rivera")
-        self.assertEqual(user.major, "Computer Science")
-        self.assertEqual(
-            user.interests,
-            ["Software design", "Mathematics", "Research writing"],
-        )
-        self.assertEqual(
-            user.bio,
-            "I like building campus tools and reviewing software projects.",
-        )
+        self.assertEqual(user.major, "")
+        self.assertEqual(user.interests, [])
+        self.assertEqual(user.bio, "")
+        self.assertEqual(user.contactInfo, "jordan.rivera@southernct.edu")
         self.assertEqual(user.status, "active")
         self.assertEqual(user.role, "student")
         self.assertTrue(check_password_hash(user.passwordHash, "study-pass-123"))

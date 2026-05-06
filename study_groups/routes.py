@@ -1,6 +1,15 @@
-from flask import Blueprint, current_app, redirect, render_template, session, url_for
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
-from .view_models import study_group_view_model
+from .view_models import study_group_detail_view_model, study_group_view_model
 
 
 study_groups_bp = Blueprint("study_groups", __name__)
@@ -36,11 +45,62 @@ def listings() -> str:
     )
 
 
+@study_groups_bp.get("/study-groups/<group_id>")
+def detail(group_id: str) -> str:
+    store = current_app.config["DATA_STORE"]
+    current_user, group = _study_group_detail_data(
+        store,
+        session.get("user_id"),
+        group_id,
+    )
+    if group is None:
+        abort(404)
+
+    return render_template(
+        "study_groups/detail.html",
+        group=study_group_detail_view_model(group, current_user),
+        current_user=current_user,
+    )
+
+
 @study_groups_bp.post("/study-groups/<group_id>/join")
 def join_group(group_id: str):
     store = current_app.config["DATA_STORE"]
     store.join_study_group(session.get("user_id"), group_id)
+    if (request.form.get("next") or request.args.get("next")) == "detail":
+        return redirect(url_for("study_groups.detail", group_id=group_id))
+
     return redirect(url_for("study_groups.listings"))
+
+
+@study_groups_bp.post("/study-groups/<group_id>/leave")
+def leave_group(group_id: str):
+    store = current_app.config["DATA_STORE"]
+    store.leave_study_group(session.get("user_id"), group_id)
+    if (request.form.get("next") or request.args.get("next")) == "detail":
+        return redirect(url_for("study_groups.detail", group_id=group_id))
+
+    return redirect(url_for("study_groups.listings"))
+
+
+@study_groups_bp.post("/study-groups/<group_id>/delete")
+def delete_group(group_id: str):
+    store = current_app.config["DATA_STORE"]
+    store.delete_study_group(session.get("user_id"), group_id)
+    return redirect(url_for("study_groups.listings"))
+
+
+def _study_group_detail_data(store, user_id, group_id):
+    detail_data = getattr(store, "study_group_detail_data", None)
+    if detail_data is not None:
+        return detail_data(user_id, group_id)
+
+    current_user, groups = store.study_group_listing_data(user_id)
+    group = next(
+        (group for group in groups if str(group.id) == str(group_id)),
+        None,
+    )
+    return current_user, group
 
 
 def _is_active_member(group, user) -> bool:

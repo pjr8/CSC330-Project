@@ -4,30 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Create Study Group | Southern Connecticut State University</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/study_groups/create.css') }}">
 </head>
 <body>
     <a class="skip-link" href="#create-group-form">Skip to create group form</a>
 
-    <header class="site-header">
-        <div class="site-header__inner">
-            <a class="brand-logo" href="{{ url_for('home') }}" aria-label="Southern Connecticut State University Study Groups home">
-                <img
-                    src="{{ url_for('static', filename='images/scsu-logo.png') }}"
-                    alt="Southern Connecticut State University"
-                    class="brand-logo__image">
-            </a>
-
-            <nav class="top-nav" aria-label="Primary">
-                <a class="top-nav__link" href="{{ url_for('home') }}">Home</a>
-                <a class="top-nav__link" href="{{ url_for('study_groups.listings') }}">Listings</a>
-                <a class="top-nav__link top-nav__link--active" href="{{ url_for('create_group') }}">Create</a>
-                <a class="top-nav__link" href="{{ url_for('profile') }}">Profile</a>
-                <a class="top-nav__link" href="{{ url_for('messages') }}">Messages</a>
-                <a class="top-nav__link top-nav__link--quiet" href="{{ url_for('logout') }}">Logout</a>
-            </nav>
-        </div>
-    </header>
+    {% set active_page = "create" %}
+    {% include "partials/_app_header.html" %}
 
     <main class="page-shell">
         <section class="page-intro" aria-labelledby="page-title">

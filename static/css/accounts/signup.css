@@ -83,41 +83,19 @@ button {
     gap: 1.5rem;
 }
 
-.brand-lockup {
-    display: flex;
+.signup-brand-logo {
+    display: inline-flex;
     align-items: center;
-    gap: 0.8rem;
     min-width: 0;
+    padding: 0.4rem 0;
 }
 
-.brand-lockup__mark {
-    width: 44px;
-    height: 44px;
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    background: var(--white);
-    color: var(--reflex-blue);
-    border: 2px solid var(--golden-yellow);
-    border-radius: 4px;
-    font-family: Cochin, Georgia, "Times New Roman", Times, serif;
-    font-size: 1rem;
-    font-weight: 700;
-}
-
-.brand-lockup__kicker {
-    margin: 0 0 0.05rem;
-    color: #dfe9ff;
-    font-size: 0.84rem;
-}
-
-.brand-lockup__wordmark {
-    display: inline-block;
-    color: var(--white);
-    font-family: Cochin, Georgia, "Times New Roman", Times, serif;
-    font-size: 1.42rem;
-    font-weight: 700;
-    line-height: 1.1;
+.signup-brand-logo img {
+    display: block;
+    width: auto;
+    height: 58px;
+    max-width: min(360px, 58vw);
+    object-fit: contain;
 }
 
 .top-nav {
@@ -470,8 +448,9 @@ dd strong {
         width: min(100% - 1rem, 1160px);
     }
 
-    .brand-lockup {
-        align-items: flex-start;
+    .signup-brand-logo img {
+        height: 48px;
+        max-width: 72vw;
     }
 
     .top-nav {
