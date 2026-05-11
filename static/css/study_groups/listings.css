@@ -37,7 +37,9 @@ a {
 }
 
 button,
-a {
+a,
+input,
+select {
     font: inherit;
 }
 
@@ -148,7 +150,7 @@ button {
 
 .page-intro {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 2rem;
     align-items: end;
     padding: 0.4rem 0 1.55rem;
@@ -197,38 +199,8 @@ h3 {
     font-size: 1rem;
 }
 
-.page-status {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-top: 4px solid var(--cyan);
-}
-
-.page-status div {
-    min-height: 78px;
-    display: grid;
-    align-content: center;
-    gap: 0.1rem;
-    padding: 0.85rem 1rem;
-    border-right: 1px solid var(--line);
-}
-
-.page-status div:last-child {
-    border-right: 0;
-}
-
-.page-status__value {
-    color: var(--reflex-blue);
-    font-size: 1.45rem;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.page-status__label {
-    color: var(--muted);
-    font-size: 0.9rem;
-    font-weight: 700;
+.page-intro__action {
+    min-width: 172px;
 }
 
 .listings-layout {
@@ -251,14 +223,63 @@ h3 {
     display: block;
 }
 
-.signed-in {
+.result-count {
     margin: 0;
     color: var(--muted);
     font-size: 0.95rem;
 }
 
-.signed-in strong {
+.result-count strong {
     color: var(--ink);
+}
+
+.listing-controls {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px) auto;
+    gap: 0.75rem;
+    align-items: end;
+    margin-bottom: 0.9rem;
+    padding: 1rem;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--medium-blue);
+    border-radius: 6px;
+}
+
+.control-field {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.control-field label {
+    color: var(--reflex-blue);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.control-field input,
+.control-field select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--ink);
+    padding: 0.55rem 0.7rem;
+}
+
+.control-field input:focus,
+.control-field select:focus {
+    outline: 3px solid var(--process-yellow);
+    outline-offset: 2px;
+}
+
+.listing-controls__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
 }
 
 .group-list {
@@ -297,9 +318,8 @@ h3 {
     font-weight: 700;
 }
 
-.listing-row__topline span:last-child {
+.listing-row__topline > span:first-child {
     color: var(--reflex-blue);
-    text-transform: capitalize;
 }
 
 .listing-row__description {
@@ -363,7 +383,7 @@ dd {
 }
 
 .host-line {
-    margin: 0.55rem 0 0;
+    margin: 0;
     color: var(--muted);
     font-size: 0.9rem;
 }
@@ -375,8 +395,20 @@ dd {
     gap: 0.45rem;
 }
 
+.join-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.join-form .button {
+    width: 100%;
+}
+
 .button {
     min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 4px;
     padding: 0.45rem 0.75rem;
     border: 1px solid var(--reflex-blue);
@@ -401,6 +433,29 @@ dd {
 .button--text:hover,
 .button--text:focus-visible {
     background: var(--surface-blue);
+}
+
+.button--joined {
+    background: var(--surface-blue);
+    color: var(--reflex-blue);
+    border-color: #c7ddfb;
+}
+
+.button--danger {
+    background: var(--white);
+    color: #b42318;
+    border-color: #f0b8b3;
+}
+
+.button--danger:hover,
+.button--danger:focus-visible {
+    background: #fff4f2;
+}
+
+.button--disabled {
+    background: #f4f6f9;
+    color: var(--gray);
+    border-color: var(--line);
 }
 
 .favorites-rail {
@@ -473,7 +528,6 @@ dd {
         justify-content: flex-start;
     }
 
-    .page-intro,
     .listings-layout {
         grid-template-columns: 1fr;
     }
@@ -501,25 +555,27 @@ dd {
         font-size: 2.05rem;
     }
 
-    .page-status,
     .listing-row,
+    .page-intro,
     .listing-facts {
         grid-template-columns: 1fr;
     }
 
-    .page-status div {
-        min-height: 64px;
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-    }
-
-    .page-status div:last-child {
-        border-bottom: 0;
+    .page-intro__action {
+        width: 100%;
     }
 
     .section-heading {
         display: grid;
         align-items: start;
+    }
+
+    .listing-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .listing-controls__actions {
+        justify-content: stretch;
     }
 
     .listing-row__topline {
@@ -539,6 +595,10 @@ dd {
     .group-actions {
         width: 100%;
         justify-content: stretch;
+    }
+
+    .join-form {
+        flex: 1 1 120px;
     }
 
     .button {
