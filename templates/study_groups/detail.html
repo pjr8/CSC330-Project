@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ group.title }} | Study Groups | Southern Connecticut State University</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/study_groups/detail.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#group-detail">Skip to study group details</a>
+
+    {% set active_page = "listings" %}
+    {% include "partials/_app_header.html" %}
+
+    <main id="group-detail" class="page-shell">
+        <a class="back-link" href="{{ url_for('study_groups.listings') }}">Back to listings</a>
+
+        <section class="detail-hero" aria-labelledby="group-title">
+            <div class="detail-hero__content">
+                <div class="hero-kicker">
+                    <span>{{ group.subject }}</span>
+                    <span>{{ group.status }}</span>
+                </div>
+                <h1 id="group-title">{{ group.title }}</h1>
+                <p>{{ group.description }}</p>
+            </div>
+
+            <aside class="join-panel" aria-label="Membership status">
+                {% if group.join_state == "joined" %}
+                    <span class="state-badge state-badge--joined">{% if group.can_delete %}Owner{% else %}Joined{% endif %}</span>
+                    {% if group.can_delete %}
+                        <p>You host this study group.</p>
+                        <a class="button button--primary" href="{{ url_for('messages.inbox', group=group.id) }}">Open chat</a>
+                        <form class="join-form" method="post" action="{{ url_for('study_groups.delete_group', group_id=group.id) }}">
+                            <button class="button button--danger" type="submit">Delete group</button>
+                        </form>
+                    {% else %}
+                        <p>You are on this roster.</p>
+                        <a class="button button--primary" href="{{ url_for('messages.inbox', group=group.id) }}">Open chat</a>
+                        <form class="join-form" method="post" action="{{ url_for('study_groups.leave_group', group_id=group.id) }}">
+                            <input type="hidden" name="next" value="detail">
+                            <button class="button button--danger" type="submit">Leave group</button>
+                        </form>
+                    {% endif %}
+                {% elif group.join_state == "join" %}
+                    <span class="state-badge">Open</span>
+                    <p>Join to reserve a seat and view member-only meeting details.</p>
+                    <form class="join-form" method="post" action="{{ url_for('study_groups.join_group', group_id=group.id) }}">
+                        <input type="hidden" name="next" value="detail">
+                        <button class="button button--primary" type="submit">Join group</button>
+                    </form>
+                {% elif group.join_state == "full" %}
+                    <span class="state-badge state-badge--full">Full</span>
+                    <p>This group has reached its current capacity.</p>
+                {% else %}
+                    <span class="state-badge state-badge--closed">Closed</span>
+                    <p>This group is not accepting new members right now.</p>
+                {% endif %}
+            </aside>
+        </section>
+
+        <section class="facts-band" aria-label="Study group facts">
+            <dl class="detail-facts">
+                <div>
+                    <dt>Host</dt>
+                    <dd>{{ group.creator_name }}</dd>
+                </div>
+                <div>
+                    <dt>Schedule</dt>
+                    <dd>{{ group.meeting_time }}</dd>
+                </div>
+                <div>
+                    <dt>Modality</dt>
+                    <dd>{{ group.modality }}</dd>
+                </div>
+                <div>
+                    <dt>Location</dt>
+                    <dd>{{ group.location }}</dd>
+                </div>
+                <div>
+                    <dt>Capacity</dt>
+                    <dd>{{ group.capacity }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        <div class="detail-layout{% if not group.meeting_link %} detail-layout--single{% endif %}">
+            <section class="detail-section" aria-labelledby="roster-title">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Members</p>
+                        <h2 id="roster-title">Group Roster</h2>
+                    </div>
+                    <p class="section-note">{{ group.active_member_count }} active members</p>
+                </div>
+
+                <div class="roster-list">
+                    {% for member in group.members %}
+                        <article class="roster-item">
+                            <div>
+                                <h3>{{ member.name }}</h3>
+                                {% if member.major %}
+                                    <p>{{ member.major }}</p>
+                                {% endif %}
+                            </div>
+                            <span>{{ member.role }}</span>
+                        </article>
+                    {% else %}
+                        <p class="empty-state">No active members are on this roster yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            {% if group.meeting_link %}
+                <aside class="access-panel" aria-labelledby="access-title">
+                    <div class="section-heading section-heading--compact">
+                        <div>
+                            <p class="eyebrow">Member access</p>
+                            <h2 id="access-title">Meeting link</h2>
+                        </div>
+                    </div>
+
+                    {% if group.show_meeting_link %}
+                        <a class="button button--primary" href="{{ group.meeting_link }}">Open meeting link</a>
+                    {% else %}
+                        <p class="access-panel__copy">Join this group to view the meeting link.</p>
+                    {% endif %}
+                </aside>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

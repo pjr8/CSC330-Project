@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Study Group | Southern Connecticut State University</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/study_groups/create.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#create-group-form">Skip to create group form</a>
+
+    {% set active_page = "create" %}
+    {% include "partials/_app_header.html" %}
+
+    <main class="page-shell">
+        <section class="page-intro page-intro--simple" aria-labelledby="page-title">
+            <div>
+                <p class="eyebrow">Study group hosting</p>
+                <h1 id="page-title">Create Study Group</h1>
+                <p class="page-intro__copy">
+                    Add the details classmates need before they join.
+                </p>
+            </div>
+        </section>
+
+        <div class="create-layout">
+            <section class="create-main" aria-labelledby="form-heading">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Session details</p>
+                        <h2 id="form-heading">Group information</h2>
+                    </div>
+                    <p class="required-note">Location or link depends on format.</p>
+                </div>
+
+                {% if error_summary %}
+                    <div class="error-summary" role="alert" aria-labelledby="error-summary-title">
+                        <h3 id="error-summary-title">Review your study group details</h3>
+                        <ul>
+                            {% for message in error_summary %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <form id="create-group-form" class="create-form" method="post" novalidate>
+                    <div class="field-grid">
+                        <div class="field{% if errors.get('title') %} field--error{% endif %}">
+                            <label for="title">Group title</label>
+                            <input
+                                id="title"
+                                name="title"
+                                type="text"
+                                value="{{ form_data.title }}"
+                                required
+                                {% if errors.get('title') %}aria-invalid="true" aria-describedby="title-error"{% endif %}
+                            >
+                            {% if errors.get('title') %}
+                                <p class="field-error" id="title-error">{{ errors.title }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('subject') %} field--error{% endif %}">
+                            <label for="subject">Course or subject</label>
+                            <input
+                                id="subject"
+                                name="subject"
+                                type="text"
+                                placeholder="CSC 330 - Software Engineering"
+                                value="{{ form_data.subject }}"
+                                required
+                                {% if errors.get('subject') %}aria-invalid="true" aria-describedby="subject-error"{% endif %}
+                            >
+                            {% if errors.get('subject') %}
+                                <p class="field-error" id="subject-error">{{ errors.subject }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field field--wide{% if errors.get('description') %} field--error{% endif %}">
+                            <label for="description">Description</label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                rows="5"
+                                required
+                                {% if errors.get('description') %}aria-invalid="true" aria-describedby="description-error"{% endif %}
+                            >{{ form_data.description }}</textarea>
+                            {% if errors.get('description') %}
+                                <p class="field-error" id="description-error">{{ errors.description }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('meetingDate') %} field--error{% endif %}">
+                            <label for="meetingDate">Meeting date</label>
+                            <input
+                                id="meetingDate"
+                                name="meetingDate"
+                                type="date"
+                                value="{{ form_data.meetingDate }}"
+                                required
+                                {% if errors.get('meetingDate') %}aria-invalid="true" aria-describedby="meetingDate-error"{% endif %}
+                            >
+                            {% if errors.get('meetingDate') %}
+                                <p class="field-error" id="meetingDate-error">{{ errors.meetingDate }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('modality') %} field--error{% endif %}">
+                            <label for="modality">Format</label>
+                            <select
+                                id="modality"
+                                name="modality"
+                                required
+                                {% if errors.get('modality') %}aria-invalid="true" aria-describedby="modality-error"{% endif %}
+                            >
+                                <option value="">Choose format</option>
+                                {% for modality in modalities %}
+                                    <option value="{{ modality }}"{% if form_data.modality == modality %} selected{% endif %}>{{ modality }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if errors.get('modality') %}
+                                <p class="field-error" id="modality-error">{{ errors.modality }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('startTime') %} field--error{% endif %}">
+                            <label for="startTime">Start time</label>
+                            <input
+                                id="startTime"
+                                name="startTime"
+                                type="time"
+                                value="{{ form_data.startTime }}"
+                                required
+                                {% if errors.get('startTime') %}aria-invalid="true" aria-describedby="startTime-error"{% endif %}
+                            >
+                            {% if errors.get('startTime') %}
+                                <p class="field-error" id="startTime-error">{{ errors.startTime }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('endTime') %} field--error{% endif %}">
+                            <label for="endTime">End time</label>
+                            <input
+                                id="endTime"
+                                name="endTime"
+                                type="time"
+                                value="{{ form_data.endTime }}"
+                                required
+                                {% if errors.get('endTime') %}aria-invalid="true" aria-describedby="endTime-error"{% endif %}
+                            >
+                            {% if errors.get('endTime') %}
+                                <p class="field-error" id="endTime-error">{{ errors.endTime }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('location') %} field--error{% endif %}">
+                            <label for="location">Campus location</label>
+                            <input
+                                id="location"
+                                name="location"
+                                type="text"
+                                placeholder="Buley Library, Room 205"
+                                value="{{ form_data.location }}"
+                                {% if errors.get('location') %}aria-invalid="true" aria-describedby="location-error location-hint"{% else %}aria-describedby="location-hint"{% endif %}
+                            >
+                            <p class="field-hint" id="location-hint">Required for in-person or hybrid groups.</p>
+                            {% if errors.get('location') %}
+                                <p class="field-error" id="location-error">{{ errors.location }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field{% if errors.get('maxMembers') %} field--error{% endif %}">
+                            <label for="maxMembers">Capacity</label>
+                            <input
+                                id="maxMembers"
+                                name="maxMembers"
+                                type="number"
+                                min="2"
+                                max="30"
+                                inputmode="numeric"
+                                value="{{ form_data.maxMembers }}"
+                                required
+                                {% if errors.get('maxMembers') %}aria-invalid="true" aria-describedby="maxMembers-error maxMembers-hint"{% else %}aria-describedby="maxMembers-hint"{% endif %}
+                            >
+                            <p class="field-hint" id="maxMembers-hint">Choose 2 to 30 students.</p>
+                            {% if errors.get('maxMembers') %}
+                                <p class="field-error" id="maxMembers-error">{{ errors.maxMembers }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="field field--wide{% if errors.get('meetingLink') %} field--error{% endif %}">
+                            <label for="meetingLink">Virtual meeting link</label>
+                            <input
+                                id="meetingLink"
+                                name="meetingLink"
+                                type="url"
+                                placeholder="https://"
+                                value="{{ form_data.meetingLink }}"
+                                {% if errors.get('meetingLink') %}aria-invalid="true" aria-describedby="meetingLink-error meetingLink-hint"{% else %}aria-describedby="meetingLink-hint"{% endif %}
+                            >
+                            <p class="field-hint" id="meetingLink-hint">Required for virtual or hybrid groups.</p>
+                            {% if errors.get('meetingLink') %}
+                                <p class="field-error" id="meetingLink-error">{{ errors.meetingLink }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a class="button button--text" href="{{ url_for('study_groups.listings') }}">Cancel</a>
+                        <button class="button button--primary" type="submit">Create group</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

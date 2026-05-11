@@ -1,6 +1,3 @@
-/* =========================
-   SOUTHERN CONNECTICUT STATE UNIVERSITY PROFILE THEME
-   ========================= */
 :root {
   --scsu-blue: #003399;
   --scsu-cyan: #00adeb;
@@ -9,204 +6,358 @@
   --scsu-yellow: #fff200;
   --scsu-medium-blue: #016abd;
   --scsu-gray: #818181;
-  --scsu-ink: #111827;
-  --scsu-border: #c9d5ee;
+  --scsu-ink: #101828;
+  --scsu-muted: #526071;
+  --scsu-border: #d8e0ec;
   --scsu-page: #f5f8fc;
+  --scsu-soft-blue: #eef6ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100%;
+  margin: 0;
   background:
     linear-gradient(180deg, rgba(0, 51, 153, 0.08), rgba(255, 255, 255, 0) 320px),
     var(--scsu-page);
   color: var(--scsu-ink);
   font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
+  font-size: 16px;
+  line-height: 1.55;
 }
 
-.scsu-navbar {
-  background: var(--scsu-blue);
-  border-bottom: 5px solid var(--scsu-gold);
-  box-shadow: 0 4px 18px rgba(0, 51, 153, 0.12);
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.scsu-navbar .container {
-  gap: 1.5rem;
-  min-height: 88px;
+button,
+a,
+input,
+textarea {
+  font: inherit;
 }
 
-.navbar-brand {
-  margin: 0;
-  padding: 0.75rem 0;
-}
-
-.scsu-logo {
-  display: block;
-  width: auto;
-  height: 56px;
-  max-width: min(360px, 58vw);
-  object-fit: contain;
-}
-
-.navbar-nav {
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.nav-link {
-  min-height: 40px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0.35rem 0.8rem;
-  color: var(--scsu-white) !important;
-  font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
-  font-size: inherit;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: none;
-  border-bottom: 3px solid transparent;
-}
-
-.nav-link:hover,
-.nav-link:focus {
-  color: var(--scsu-white) !important;
-  border-bottom-color: var(--scsu-gold);
-}
-
-main.container {
-  max-width: 1040px;
-}
-
-.card {
-  border: 1px solid var(--scsu-border);
-  border-radius: 6px;
-  box-shadow: 0 10px 26px rgba(0, 51, 153, 0.1);
-}
-
-.row.justify-content-center > .col-md-8 > .card:first-child {
-  border-top: 8px solid var(--scsu-blue);
-  background: var(--scsu-white);
-}
-
-.profile-avatar {
-  width: 120px;
-  height: 120px;
-  border: 4px solid var(--scsu-blue);
-  padding: 3px;
-  background: var(--scsu-white);
-  object-fit: cover;
-}
-
-.profile-name {
-  margin-top: 1rem;
-  margin-bottom: 0.25rem;
-  color: var(--scsu-blue);
-  font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
-  font-size: 1.7rem;
-  font-weight: 700;
-}
-
-h3,
-h4,
-h5 {
-  color: var(--scsu-blue);
-  font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
-  font-weight: 700;
-  letter-spacing: 0;
-}
-
-h4 {
-  padding-bottom: 0.75rem;
-  border-bottom: 3px solid var(--scsu-gold);
-}
-
-.text-muted {
-  color: #4d5563 !important;
-}
-
-.profile-panel {
-  min-height: 100%;
-  border-left: 6px solid var(--scsu-blue);
-  background: var(--scsu-white);
-}
-
-.profile-panel h5 {
-  margin-bottom: 0.75rem;
-}
-
-.profile-panel h5::after {
-  content: "";
-  display: block;
-  width: 48px;
-  height: 4px;
-  margin-top: 0.55rem;
-  background: var(--scsu-cyan);
-}
-
-.badge {
-  color: var(--scsu-blue);
-  background: rgba(0, 173, 235, 0.16);
-  border: 1px solid rgba(0, 51, 153, 0.22);
-  border-radius: 999px;
-  font-family: "Palatino Linotype", "Book Antiqua", "Times New Roman", Times, serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.btn-primary,
-.btn-outline-primary:hover,
-.btn-outline-primary:focus {
-  color: var(--scsu-white);
-  background-color: var(--scsu-blue);
-  border-color: var(--scsu-blue);
-}
-
-.btn-primary:hover,
-.btn-primary:focus {
-  color: var(--scsu-white);
-  background-color: #00256f;
-  border-color: #00256f;
-}
-
-.btn-outline-primary {
-  color: var(--scsu-blue);
-  border-color: var(--scsu-blue);
-  font-weight: 700;
-}
-
-.form-control {
-  border-color: var(--scsu-border);
-  border-radius: 4px;
-}
-
-.form-control:focus {
-  border-color: var(--scsu-blue);
-  box-shadow: 0 0 0 0.2rem rgba(0, 51, 153, 0.18);
+button {
+  cursor: pointer;
 }
 
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid var(--scsu-gold);
+  outline: 3px solid var(--scsu-yellow);
   outline-offset: 3px;
 }
 
-@media (max-width: 767px) {
-  .scsu-navbar .container {
-    align-items: flex-start;
-    min-height: auto;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 10;
+  transform: translateY(-160%);
+  background: var(--scsu-yellow);
+  color: var(--scsu-blue);
+  padding: 0.65rem 0.9rem;
+  border: 2px solid var(--scsu-blue);
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.page-shell {
+  width: min(1040px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2.25rem 0 3rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--scsu-medium-blue);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  overflow-wrap: anywhere;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  color: var(--scsu-blue);
+  line-height: 1.12;
+}
+
+h1 {
+  font-size: clamp(2.05rem, 3vw, 2.85rem);
+}
+
+h2 {
+  font-size: 1.35rem;
+}
+
+.button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--scsu-blue);
+  font-weight: 700;
+}
+
+.button--primary {
+  background: var(--scsu-blue);
+  color: var(--scsu-white);
+}
+
+.button--primary:hover,
+.button--primary:focus-visible {
+  background: var(--scsu-medium-blue);
+}
+
+.button--text {
+  background: transparent;
+  color: var(--scsu-blue);
+}
+
+.button--text:hover,
+.button--text:focus-visible {
+  background: var(--scsu-soft-blue);
+}
+
+.section-heading {
+  display: grid;
+  gap: 0.15rem;
+  margin-bottom: 0.85rem;
+}
+
+.section-heading--compact {
+  margin-bottom: 0.75rem;
+}
+
+.profile-hero,
+.profile-panel,
+.profile-form {
+  background: var(--scsu-white);
+  border: 1px solid var(--scsu-border);
+  border-radius: 6px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.35rem;
+  border-top: 6px solid var(--scsu-blue);
+  box-shadow: 0 18px 44px rgba(16, 24, 40, 0.08);
+}
+
+.profile-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  flex: 0 0 auto;
+  border: 4px solid var(--scsu-blue);
+  border-radius: 50%;
+  padding: 3px;
+  background: var(--scsu-white);
+  object-fit: cover;
+}
+
+.profile-major,
+.profile-copy,
+.form-intro__copy,
+.field-hint {
+  color: var(--scsu-muted);
+}
+
+.profile-major {
+  margin: 0.4rem 0 0;
+  font-weight: 700;
+}
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.profile-panel {
+  padding: 1rem;
+  border-left: 4px solid var(--scsu-blue);
+}
+
+.profile-panel--wide {
+  grid-column: 1 / -1;
+}
+
+.profile-copy {
+  margin: 0;
+}
+
+.interest-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.interest-pill {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  color: var(--scsu-blue);
+  background: rgba(0, 173, 235, 0.16);
+  border: 1px solid rgba(0, 51, 153, 0.22);
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 0.9rem;
+  color: var(--scsu-muted);
+  background: var(--scsu-white);
+  border: 1px dashed #b8c8dd;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.form-intro {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--scsu-border);
+}
+
+.form-intro__copy {
+  max-width: 620px;
+  margin: 0.65rem 0 0;
+}
+
+.profile-form {
+  max-width: 860px;
+  margin: 1.25rem auto 0;
+  padding: 1.1rem;
+  border-left: 4px solid var(--scsu-blue);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.95rem 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.field--wide {
+  grid-column: 1 / -1;
+}
+
+label {
+  color: var(--scsu-blue);
+  font-weight: 700;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid var(--scsu-border);
+  border-radius: 4px;
+  background: var(--scsu-white);
+  color: var(--scsu-ink);
+  padding: 0.65rem 0.75rem;
+}
+
+input {
+  min-height: 46px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--scsu-blue);
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--scsu-border);
+}
+
+@media (max-width: 760px) {
+  .page-shell {
+    width: min(100% - 1rem, 1040px);
+    padding-top: 1.35rem;
   }
 
-  .scsu-logo {
-    height: 44px;
-    max-width: 72vw;
+  .profile-hero,
+  .profile-identity,
+  .profile-layout,
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
-  .navbar-nav {
-    flex-direction: row;
-    width: 100%;
-    justify-content: flex-start;
+  .profile-hero {
+    align-items: start;
+  }
+
+  .profile-avatar {
+    width: 104px;
+    height: 104px;
+  }
+
+  .field--wide {
+    grid-column: auto;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .button {
+    flex: 1 1 140px;
   }
 }

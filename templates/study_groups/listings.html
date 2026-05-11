@@ -3,74 +3,79 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Study Group Listings | Southern Connecticut State University</title>
+    <title>Study Groups | Southern Connecticut State University</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/study_groups/listings.css') }}">
 </head>
 <body>
     <a class="skip-link" href="#available-groups">Skip to available groups</a>
 
-    <header class="site-header">
-        <div class="site-header__inner">
-            <div class="brand-lockup" aria-label="Southern Connecticut State University Study Groups">
-                <div class="brand-lockup__mark" aria-hidden="true">SC</div>
-                <div>
-                    <p class="brand-lockup__kicker">Southern Connecticut State University</p>
-                    <a class="brand-lockup__wordmark" href="{{ url_for('home') }}">Study Groups</a>
-                </div>
-            </div>
-
-            <nav class="top-nav" aria-label="Primary">
-                <a class="top-nav__link" href="{{ url_for('profile') }}">Profile</a>
-                <a class="top-nav__link" href="{{ url_for('messages') }}">Messages</a>
-                <a class="top-nav__link top-nav__link--quiet" href="{{ url_for('logout') }}">Logout</a>
-            </nav>
-        </div>
-    </header>
+    {% set active_page = "listings" %}
+    {% include "partials/_app_header.html" %}
 
     <main class="page-shell">
         <section class="page-intro" aria-labelledby="page-title">
             <div>
                 <p class="eyebrow">Current semester</p>
-                <h1 id="page-title">Available Study Groups</h1>
+                <h1 id="page-title">Find Study Groups</h1>
                 <p class="page-intro__copy">
-                    Open peer-led sessions for Southern students, organized for quick review and enrollment.
+                    Search open sessions and join what fits your schedule.
                 </p>
             </div>
-
-            <div class="page-status" aria-label="Listings summary">
-                <div>
-                    <span class="page-status__value">{{ available_groups|length }}</span>
-                    <span class="page-status__label">Open groups</span>
-                </div>
-                <div>
-                    <span class="page-status__value">{{ favorite_groups|length }}</span>
-                    <span class="page-status__label">Saved</span>
-                </div>
-                <div>
-                    <span class="page-status__value">Live</span>
-                    <span class="page-status__label">Preview mode</span>
-                </div>
-            </div>
+            <a class="button button--primary page-intro__action" href="{{ url_for('create_group') }}">Create study group</a>
         </section>
 
         <div class="listings-layout">
             <section class="listings-main" aria-labelledby="available-groups">
                 <div class="section-heading">
                     <div>
-                        <p class="eyebrow">Directory</p>
-                        <h2 id="available-groups">Open Study Groups</h2>
+                        <p class="eyebrow">Groups</p>
+                        <h2 id="available-groups">Open study groups</h2>
                     </div>
-                    <p class="signed-in">Signed in as <strong>{{ current_user.getFullName() }}</strong></p>
+                    <p class="result-count">
+                        Showing <strong>{{ available_groups|length }}</strong> of <strong>{{ total_available_count }}</strong> open groups
+                    </p>
                 </div>
+
+                <form class="listing-controls" method="get" action="{{ url_for('study_groups.listings') }}" role="search">
+                    <div class="control-field control-field--search">
+                        <label for="listing-search">Search groups</label>
+                        <input
+                            id="listing-search"
+                            name="q"
+                            type="search"
+                            placeholder="Course, title, location, or host"
+                            value="{{ search_query }}"
+                        >
+                    </div>
+
+                    <div class="control-field">
+                        <label for="listing-sort">Sort by</label>
+                        <select id="listing-sort" name="sort">
+                            {% for option in sort_options %}
+                                <option value="{{ option.value }}"{% if option.value == sort_key %} selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="listing-controls__actions">
+                        <button class="button button--primary" type="submit">Apply</button>
+                        {% if search_query or sort_key != "soonest" %}
+                            <a class="button button--text" href="{{ url_for('study_groups.listings') }}">Clear</a>
+                        {% endif %}
+                    </div>
+                </form>
 
                 <div class="group-list">
                     {% for group in available_groups %}
                         <article class="listing-row{% if group.is_favorited %} listing-row--favorite{% endif %}">
                             <div class="listing-row__body">
-                                <div class="listing-row__topline">
-                                    <span>{{ group.subject }}</span>
-                                    <span>{{ group.status }}</span>
-                                </div>
+	                                <div class="listing-row__topline">
+	                                    <span>{{ group.subject }}</span>
+                                        {% if group.is_favorited %}
+	                                        <span class="favorite-mark favorite-mark--active">Saved</span>
+                                        {% endif %}
+	                                </div>
 
                                 <div>
                                     <h3>{{ group.title }}</h3>
@@ -97,21 +102,42 @@
                                 </dl>
                             </div>
 
-                            <div class="listing-row__aside">
-                                <div>
-                                    <span class="favorite-mark{% if group.is_favorited %} favorite-mark--active{% endif %}">
-                                        {% if group.is_favorited %}Saved{% else %}Not saved{% endif %}
-                                    </span>
-                                    <p class="host-line">Hosted by {{ group.creator_name }}</p>
-                                </div>
+	                            <div class="listing-row__aside">
+	                                <div>
+	                                    <p class="host-line">Hosted by {{ group.creator_name }}</p>
+	                                </div>
                                 <div class="group-actions">
-                                    <button class="button button--primary" type="button">Join</button>
-                                    <button class="button button--text" type="button">Details</button>
+                                    {% if group.is_member %}
+                                        <span class="button button--joined">{% if group.can_delete %}Owner{% else %}Joined{% endif %}</span>
+                                        <a class="button button--text" href="{{ url_for('messages.inbox', group=group.id) }}">Chat</a>
+                                        {% if group.can_delete %}
+                                            <form class="join-form" method="post" action="{{ url_for('study_groups.delete_group', group_id=group.id) }}">
+                                                <button class="button button--danger" type="submit">Delete</button>
+                                            </form>
+                                        {% elif group.can_leave %}
+                                            <form class="join-form" method="post" action="{{ url_for('study_groups.leave_group', group_id=group.id) }}">
+                                                <button class="button button--danger" type="submit">Leave</button>
+                                            </form>
+                                        {% endif %}
+                                    {% elif group.can_join %}
+                                        <form class="join-form" method="post" action="{{ url_for('study_groups.join_group', group_id=group.id) }}">
+                                            <button class="button button--primary" type="submit">Join</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="button button--disabled">Full</span>
+                                    {% endif %}
+                                    <a class="button button--text" href="{{ url_for('study_groups.detail', group_id=group.id) }}">Details</a>
                                 </div>
                             </div>
                         </article>
                     {% else %}
-                        <p class="empty-state">No open study groups are available right now.</p>
+                        <p class="empty-state">
+                            {% if search_query %}
+                                No open study groups match your search.
+                            {% else %}
+                                No open study groups are available right now.
+                            {% endif %}
+                        </p>
                     {% endfor %}
                 </div>
             </section>
@@ -129,13 +155,15 @@
                         <article class="favorite-item">
                             <div>
                                 <p>{{ group.subject }}</p>
-                                <h3>{{ group.title }}</h3>
+                                <h3>
+                                    <a href="{{ url_for('study_groups.detail', group_id=group.id) }}">{{ group.title }}</a>
+                                </h3>
                             </div>
                             <span>{{ group.meeting_time }}</span>
                             <span>{{ group.location }}</span>
                         </article>
                     {% else %}
-                        <p class="empty-state empty-state--panel">No favorites have been saved yet.</p>
+	                        <p class="empty-state empty-state--panel">Saved groups will appear here.</p>
                     {% endfor %}
                 </div>
             </aside>

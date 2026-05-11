@@ -16,12 +16,11 @@ REQUIRED_FIELDS = (
     "firstName",
     "lastName",
     "scsuEmail",
+    "contactInfo",
     "password",
     "confirmPassword",
-    "major",
-    "interests",
-    "bio",
 )
+MIN_PASSWORD_LENGTH = 8
 
 
 class AccountStore(Protocol):
@@ -56,9 +55,7 @@ def signup() -> str:
                     ),
                     firstName=form_data["firstName"],
                     lastName=form_data["lastName"],
-                    major=form_data["major"],
-                    interests=_parse_interests(form_data["interests"]),
-                    bio=form_data["bio"],
+                    contactInfo=form_data["contactInfo"],
                 )
                 created_user = store.create_user(user)
                 session["user_id"] = str(created_user.id)
@@ -96,7 +93,17 @@ def _validate_signup_form() -> dict[str, str]:
 
     password = request.form.get("password", "")
     confirm_password = request.form.get("confirmPassword", "")
-    if password and confirm_password and password != confirm_password:
+
+    if password.strip() and password != password.strip():
+        errors["password"] = "Password cannot start or end with spaces."
+    elif password.strip() and len(password) < MIN_PASSWORD_LENGTH:
+        errors["password"] = (
+            f"Password must be at least {MIN_PASSWORD_LENGTH} characters."
+        )
+
+    if confirm_password.strip() and confirm_password != confirm_password.strip():
+        errors["confirmPassword"] = "Password cannot start or end with spaces."
+    elif password.strip() and confirm_password.strip() and password != confirm_password:
         errors["confirmPassword"] = "Passwords must match."
 
     return errors
@@ -107,9 +114,7 @@ def _sticky_form_data() -> dict[str, str]:
         "firstName": request.form.get("firstName", "").strip(),
         "lastName": request.form.get("lastName", "").strip(),
         "scsuEmail": normalize_email(request.form.get("scsuEmail", "")),
-        "major": request.form.get("major", "").strip(),
-        "interests": request.form.get("interests", "").strip(),
-        "bio": request.form.get("bio", "").strip(),
+        "contactInfo": request.form.get("contactInfo", "").strip(),
     }
 
 
@@ -118,18 +123,8 @@ def _empty_form_data() -> dict[str, str]:
         "firstName": "",
         "lastName": "",
         "scsuEmail": "",
-        "major": "",
-        "interests": "",
-        "bio": "",
+        "contactInfo": "",
     }
-
-
-def _parse_interests(interests: str) -> list[str]:
-    return [
-        interest.strip()
-        for interest in interests.split(",")
-        if interest.strip()
-    ]
 
 
 def _error_summary(errors: dict[str, str]) -> list[str]:

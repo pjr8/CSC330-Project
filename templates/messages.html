@@ -1,178 +1,190 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>SCSU Messages</title>
-
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #FFFFFF;
-        }
-
-        /* HEADER */
-        .header {
-            background: #003399;
-            color: white;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-        }
-
-        .header img {
-            height: 40px;
-            margin-right: 15px;
-        }
-
-        /* LAYOUT */
-        .container {
-            display: flex;
-            height: 90vh;
-        }
-
-        /* SIDEBAR */
-        .sidebar {
-            width: 30%;
-            border-right: 1px solid #ccc;
-            background: #f7f9fc;
-            padding: 10px;
-        }
-
-        .chat-user {
-            display: block;
-            padding: 12px;
-            margin-bottom: 5px;
-            background: white;
-            border-radius: 5px;
-            cursor: pointer;
-            color: #222;
-            text-decoration: none;
-        }
-
-        .chat-user.active {
-            background: #003399;
-            color: white;
-        }
-
-        /* CHAT AREA */
-        .chat {
-            width: 70%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #ccc;
-            font-weight: bold;
-            color: #003399;
-        }
-
-        .messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .message {
-            margin: 10px 0;
-            max-width: 60%;
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        .sent {
-            background: #003399;
-            color: white;
-            margin-left: auto;
-        }
-
-        .received {
-            background: #e6e6e6;
-        }
-
-        .empty-chat {
-            color: #777;
-            text-align: center;
-            margin-top: 30px;
-        }
-
-        /* INPUT */
-        .input-box {
-            display: flex;
-            padding: 15px;
-            border-top: 1px solid #ccc;
-        }
-
-        input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        button {
-            margin-left: 10px;
-            padding: 12px 20px;
-            background: #003399;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #016ABD;
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Study Group Messages | Southern Connecticut State University</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css') }}">
+    <script src="{{ url_for('static', filename='js/messages.js') }}" defer></script>
 </head>
-
 <body>
+    <a class="skip-link" href="#message-composer">Skip to message composer</a>
 
-<!-- HEADER WITH LOGO -->
-<div class="header">
-    <!-- Replace with official SCSU logo PNG -->
-    <img src="{{ url_for('static', filename='images/scsu-logo.png') }}" alt="SCSU Logo">
-    <h2>Student Messaging Portal</h2>
-</div>
+    {% set active_page = "messages" %}
+    {% include "partials/_app_header.html" %}
 
-<div class="container">
+    <main
+        class="messages-shell"
+        aria-labelledby="messages-title"
+        data-state-url="{{ url_for('messages.message_state') }}"
+        data-inbox-url="{{ url_for('messages.inbox') }}"
+    >
+        <section class="messages-toolbar">
+            <div>
+                <p class="eyebrow">Study group chats</p>
+                <h1 id="messages-title">Messages</h1>
+            </div>
+            <div class="messages-toolbar__summary" aria-label="Chat summary" data-chat-summary>
+                <span><strong>{{ threads|length }}</strong> group chat{% if threads|length != 1 %}s{% endif %}</span>
+                {% if active_thread %}
+                    <span>Open study group</span>
+                {% else %}
+                    <span>No group selected</span>
+                {% endif %}
+            </div>
+        </section>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        {% for conversation in conversations %}
-            <a href="{{ url_for('messages', user=conversation) }}"
-               class="chat-user {% if current_user == conversation %}active{% endif %}">
-                {{ conversation }}
-            </a>
-        {% endfor %}
-    </div>
-
-    <!-- CHAT -->
-    <div class="chat">
-        <div class="chat-header">{{ current_user }}</div>
-
-        <div class="messages">
-            {% if messages %}
-                {% for msg in messages %}
-                    <div class="message {{ 'sent' if msg.sender == 'You' else 'received' }}">
-                        {{ msg.text }}
+        <div class="messages-layout">
+            <aside class="conversation-panel" aria-label="Study group chat navigation">
+                <form class="search-form" method="get" action="{{ url_for('messages.inbox') }}" role="search" data-search-form>
+                    <div class="rail-heading" data-search-heading>
+                        <div>
+                            <p class="eyebrow">Find</p>
+                            <label for="q">Study group lookup</label>
+                        </div>
+                        {% if search_query %}
+                            <a class="rail-action" href="{{ url_for('messages.inbox') }}" data-clear-search>Clear</a>
+                        {% endif %}
                     </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-chat">No messages yet.</div>
-            {% endif %}
+                    <div class="search-form__row">
+                        <input
+                            id="q"
+                            name="q"
+                            type="search"
+                            value="{{ search_query }}"
+                            placeholder="Title, course, or location"
+                            autocomplete="off"
+                        >
+                        <button type="submit">Search</button>
+                    </div>
+                </form>
+
+                <section class="thread-list" aria-labelledby="thread-list-title" data-thread-list>
+                    <div class="rail-heading">
+                        <div>
+                            <p class="eyebrow">Groups</p>
+                            <h2 id="thread-list-title">My chats</h2>
+                        </div>
+                        <p data-thread-count>{{ threads|length }}</p>
+                    </div>
+                    {% if threads %}
+                        <ul class="person-list">
+                            {% for thread in threads %}
+                                <li>
+                                    <a
+                                        class="person-row{% if active_chat_id == thread.conversation_id %} person-row--active{% endif %}"
+                                        href="{{ url_for('messages.inbox', chat=thread.conversation_id, q=search_query) }}"
+                                        data-thread-link
+                                        data-chat-id="{{ thread.conversation_id }}"
+                                        {% if active_chat_id == thread.conversation_id %}aria-current="page"{% endif %}
+                                    >
+                                        <span class="avatar" aria-hidden="true">{{ thread.initials }}</span>
+                                        <span class="person-row__body">
+                                            <strong>{{ thread.group_title }}</strong>
+                                            <span>{{ thread.last_message or thread.group_subject }}</span>
+                                        </span>
+                                        {% if thread.last_sent_at %}
+                                            <time datetime="{{ thread.last_sent_at }}">{{ thread.last_sent_at_label }}</time>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="empty-note">
+                            {% if search_query %}
+                                No joined study groups match your search.
+                            {% else %}
+                                Join a study group to see its chat here.
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                </section>
+            </aside>
+
+            <section class="chat-panel" aria-label="Study group conversation">
+                <header class="chat-panel__header" data-chat-header>
+                    {% if active_thread %}
+                        <div class="avatar avatar--large" aria-hidden="true">{{ active_thread.initials }}</div>
+                        <div class="chat-panel__identity">
+                            <p class="eyebrow">Group chat</p>
+                            <h2>{{ active_thread.group_title }}</h2>
+                            <p>
+                                {{ active_thread.group_subject }}
+                                {% if active_thread.member_count %}
+                                    <span>{{ active_thread.member_count }} member{% if active_thread.member_count != 1 %}s{% endif %}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% else %}
+                        <div class="chat-panel__identity">
+                            <p class="eyebrow">Group chat</p>
+                            <h2>No study group selected</h2>
+                            <p>Your joined study groups will appear in the chat list.</p>
+                        </div>
+                    {% endif %}
+                </header>
+
+                <div
+                    class="message-stream"
+                    aria-live="polite"
+                    data-live-chat-url="{{ url_for('messages.message_updates') }}"
+                    data-chat-id="{% if active_thread %}{{ active_thread.conversation_id }}{% endif %}"
+                >
+                    {% if messages %}
+                        <div class="message-stream__marker" aria-hidden="true">
+                            <span>Group chat</span>
+                        </div>
+                        {% for message in messages %}
+                            <article
+                                class="message-bubble{% if message.is_mine %} message-bubble--mine{% else %} message-bubble--theirs{% endif %}"
+                                data-message-id="{{ message.id }}"
+                                data-message-sent-at="{{ message.sent_at }}"
+                            >
+                                {% if not message.is_mine %}
+                                    <p class="message-bubble__sender">{{ message.sender_name }}</p>
+                                {% endif %}
+                                <p>{{ message.content }}</p>
+                                {% if message.sent_at %}
+                                    <time datetime="{{ message.sent_at }}">{{ message.sent_at_label }}</time>
+                                {% endif %}
+                            </article>
+                        {% endfor %}
+                    {% elif active_thread %}
+                        <div class="empty-state">
+                            <p class="eyebrow">Ready</p>
+                            <h3>Start the group chat</h3>
+                            <p>Messages sent here are visible to current group members.</p>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <p class="eyebrow">Groups</p>
+                            <h3>No chat selected</h3>
+                            <p>Select a study group chat from the list.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <form id="message-composer" class="composer" method="post" action="{{ url_for('messages.send_message') }}" data-composer>
+                    <input type="hidden" name="conversation_id" value="{% if active_thread %}{{ active_thread.conversation_id }}{% endif %}">
+                    <input type="hidden" name="group_id" value="{% if active_thread %}{{ active_thread.group_id }}{% endif %}">
+                    <input type="hidden" name="q" value="{{ search_query }}">
+                    <label for="content">Message</label>
+                    <div class="composer__row">
+                        <textarea
+                            id="content"
+                            name="content"
+                            rows="2"
+                            placeholder="Type your message..."
+                            required
+                            {% if not active_thread %}disabled{% endif %}
+                        ></textarea>
+                        <button type="submit" {% if not active_thread %}disabled{% endif %}>Send</button>
+                    </div>
+                </form>
+            </section>
         </div>
-
-        <form method="POST" class="input-box">
-            <input type="text" name="message" placeholder="Type your message..." required>
-            <button type="submit">Send</button>
-        </form>
-
-    </div>
-</div>
-
-<script></script>
-
+    </main>
 </body>
 </html>
