@@ -57,14 +57,14 @@
 
   <section class="profile-panel" aria-labelledby="profile-contact-title">
     <div class="section-heading section-heading--compact">
-      <p class="eyebrow">Contact</p>
-      <h2 id="profile-contact-title">How to reach me</h2>
+      <p class="eyebrow">Places</p>
+      <h2 id="profile-contact-title">Where to find me</h2>
     </div>
 
     {% if user.contactInfo %}
       <p class="profile-copy">{{ user.contactInfo }}</p>
     {% else %}
-      <p class="empty-state">No contact info added yet.</p>
+      <p class="empty-state">No regular hangout spots added yet.</p>
     {% endif %}
   </section>
 </div>

@@ -174,15 +174,75 @@ class MessagesRouteTestCase(unittest.TestCase):
         self.assertIn("CSC 330 - Software Engineering", page)
         self.assertIn("I added the route test checklist.", page)
         self.assertIn("I will review the Flask handlers before we meet.", page)
+        self.assertIn("May 4, 2026 at 3:00 PM ET", page)
+        self.assertIn("May 4, 2026 at 3:15 PM ET", page)
         self.assertIn("message-bubble--theirs", page)
         self.assertIn("message-bubble--mine", page)
         self.assertIn('name="conversation_id" value="chat-software"', page)
         self.assertIn('name="group_id" value="group-software"', page)
         self.assertIn("css/messages.css", page)
+        self.assertIn("js/messages.js", page)
         self.assertNotIn("Direct messages", page)
         self.assertNotIn("<style", page)
         self.assertNotIn(" style=", page)
         self.assertEqual(self.store.loaded_threads, ["chat-software"])
+
+    def test_message_updates_returns_active_group_messages_as_json(self) -> None:
+        response = self.client.get("/messages/updates?chat=chat-software")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Cache-Control"], "no-store")
+        payload = response.get_json()
+        assert payload is not None
+        self.assertTrue(payload["ok"])
+        self.assertEqual(
+            payload["active_thread"]["group_title"],
+            "Software Design Studio",
+        )
+        self.assertEqual(
+            payload["active_thread"]["last_sent_at_label"],
+            "May 4, 2026 at 3:15 PM ET",
+        )
+        self.assertEqual(
+            [message["content"] for message in payload["messages"]],
+            [
+                "I added the route test checklist.",
+                "I will review the Flask handlers before we meet.",
+            ],
+        )
+        self.assertEqual(
+            [message["sent_at_label"] for message in payload["messages"]],
+            [
+                "May 4, 2026 at 3:00 PM ET",
+                "May 4, 2026 at 3:15 PM ET",
+            ],
+        )
+        self.assertEqual(self.store.loaded_threads, ["chat-software"])
+
+    def test_message_updates_rejects_missing_or_unknown_chat(self) -> None:
+        missing_response = self.client.get("/messages/updates")
+        unknown_response = self.client.get("/messages/updates?chat=chat-missing")
+
+        self.assertEqual(missing_response.status_code, 400)
+        self.assertEqual(unknown_response.status_code, 404)
+
+    def test_message_state_returns_filtered_group_chat_state_as_json(self) -> None:
+        response = self.client.get("/messages/state?q=calculus")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Cache-Control"], "no-store")
+        payload = response.get_json()
+        assert payload is not None
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["state"]["search_query"], "calculus")
+        self.assertEqual(payload["state"]["active_chat_id"], "chat-calculus")
+        self.assertEqual(len(payload["state"]["threads"]), 1)
+        self.assertEqual(
+            payload["state"]["threads"][0]["group_title"],
+            "Calculus II Problem Session",
+        )
+        self.assertEqual(payload["state"]["messages"], [])
+        self.assertEqual(self.store.loaded_threads, ["chat-calculus"])
 
     def test_group_search_filters_and_opens_matching_chat(self) -> None:
         response = self.client.get("/messages?q=calculus")
@@ -218,6 +278,38 @@ class MessagesRouteTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.headers["Location"], "/messages?chat=chat-software")
+        self.assertEqual(
+            self.store.sent_messages,
+            [
+                {
+                    "current_user_id": "u-current",
+                    "group_id": "group-software",
+                    "conversation_id": "chat-software",
+                    "content": "I am on my way.",
+                }
+            ],
+        )
+
+    def test_ajax_send_returns_updated_state_without_redirect(self) -> None:
+        response = self.client.post(
+            "/messages/send",
+            data={
+                "conversation_id": "chat-software",
+                "group_id": "group-software",
+                "content": "I am on my way.",
+            },
+            headers={
+                "Accept": "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        assert payload is not None
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["sent"])
+        self.assertEqual(payload["state"]["active_chat_id"], "chat-software")
         self.assertEqual(
             self.store.sent_messages,
             [

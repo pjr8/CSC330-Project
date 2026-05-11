@@ -6,7 +6,7 @@
 <section class="form-intro" aria-labelledby="edit-profile-title">
   <p class="eyebrow">Profile</p>
   <h1 id="edit-profile-title">Edit Profile</h1>
-  <p class="form-intro__copy">Keep your study interests and contact details current.</p>
+  <p class="form-intro__copy">Keep your study interests and regular hangout spots current.</p>
 </section>
 
 <form class="profile-form" method="POST">
@@ -43,12 +43,12 @@
     </div>
 
     <div class="field field--wide">
-      <label for="contactInfo">Contact info</label>
+      <label for="contactInfo">Where to find me</label>
       <textarea
         id="contactInfo"
         name="contactInfo"
         rows="3"
-        placeholder="SCSU email, phone, Discord, or another preferred contact method">{{ user.contactInfo }}</textarea>
+        placeholder="Library second floor, student center, or Discord study rooms">{{ user.contactInfo }}</textarea>
     </div>
   </div>
 
