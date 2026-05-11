@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Messages | Southern Connecticut State University</title>
+    <title>Study Group Messages | Southern Connecticut State University</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css') }}">
 </head>
@@ -16,28 +16,26 @@
     <main class="messages-shell" aria-labelledby="messages-title">
         <section class="messages-toolbar">
             <div>
-                <p class="eyebrow">Direct messages</p>
+                <p class="eyebrow">Study group chats</p>
                 <h1 id="messages-title">Messages</h1>
             </div>
-            <div class="messages-toolbar__summary" aria-label="Inbox summary">
-                <span><strong>{{ threads|length }}</strong> recent chat{% if threads|length != 1 %}s{% endif %}</span>
+            <div class="messages-toolbar__summary" aria-label="Chat summary">
+                <span><strong>{{ threads|length }}</strong> group chat{% if threads|length != 1 %}s{% endif %}</span>
                 {% if active_thread %}
-                    <span>Open conversation</span>
-                {% elif selected_recipient %}
-                    <span>New message</span>
+                    <span>Open study group</span>
                 {% else %}
-                    <span>No chat selected</span>
+                    <span>No group selected</span>
                 {% endif %}
             </div>
         </section>
 
         <div class="messages-layout">
-            <aside class="conversation-panel" aria-label="Message navigation">
+            <aside class="conversation-panel" aria-label="Study group chat navigation">
                 <form class="search-form" method="get" action="{{ url_for('messages.inbox') }}" role="search">
                     <div class="rail-heading">
                         <div>
                             <p class="eyebrow">Find</p>
-                            <label for="q">Classmate lookup</label>
+                            <label for="q">Study group lookup</label>
                         </div>
                         {% if search_query %}
                             <a class="rail-action" href="{{ url_for('messages.inbox') }}">Clear</a>
@@ -49,51 +47,18 @@
                             name="q"
                             type="search"
                             value="{{ search_query }}"
-                            placeholder="Name, email, or major"
+                            placeholder="Title, course, or location"
                             autocomplete="off"
                         >
                         <button type="submit">Search</button>
                     </div>
                 </form>
 
-                {% if search_query %}
-                    <section class="search-results" aria-labelledby="search-results-title">
-                        <div class="rail-heading">
-                            <div>
-                                <p class="eyebrow">Results</p>
-                                <h2 id="search-results-title">Search results</h2>
-                            </div>
-                            <p>{{ search_results|length }}</p>
-                        </div>
-                        {% if search_results %}
-                            <ul class="person-list">
-                                {% for result in search_results %}
-                                    <li>
-                                        <a
-                                            class="person-row{% if selected_recipient and selected_recipient.id == result.id %} person-row--active{% endif %}"
-                                            href="{{ url_for('messages.inbox', recipient=result.id, q=search_query) }}"
-                                            {% if selected_recipient and selected_recipient.id == result.id %}aria-current="page"{% endif %}
-                                        >
-                                            <span class="avatar" aria-hidden="true">{{ result.initials }}</span>
-                                            <span class="person-row__body">
-                                                <strong>{{ result.name }}</strong>
-                                                <span>{{ result.major or result.email }}</span>
-                                            </span>
-                                        </a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="empty-note">No matching Southern students found.</p>
-                        {% endif %}
-                    </section>
-                {% endif %}
-
                 <section class="thread-list" aria-labelledby="thread-list-title">
                     <div class="rail-heading">
                         <div>
-                            <p class="eyebrow">Inbox</p>
-                            <h2 id="thread-list-title">Recent chats</h2>
+                            <p class="eyebrow">Groups</p>
+                            <h2 id="thread-list-title">My chats</h2>
                         </div>
                         <p>{{ threads|length }}</p>
                     </div>
@@ -103,13 +68,13 @@
                                 <li>
                                     <a
                                         class="person-row{% if active_chat_id == thread.conversation_id %} person-row--active{% endif %}"
-                                        href="{{ url_for('messages.inbox', chat=thread.conversation_id) }}"
+                                        href="{{ url_for('messages.inbox', chat=thread.conversation_id, q=search_query) }}"
                                         {% if active_chat_id == thread.conversation_id %}aria-current="page"{% endif %}
                                     >
                                         <span class="avatar" aria-hidden="true">{{ thread.initials }}</span>
                                         <span class="person-row__body">
-                                            <strong>{{ thread.participant_name }}</strong>
-                                            <span>{{ thread.last_message or "No preview available" }}</span>
+                                            <strong>{{ thread.group_title }}</strong>
+                                            <span>{{ thread.last_message or thread.group_subject }}</span>
                                         </span>
                                         {% if thread.last_sent_at %}
                                             <time datetime="{{ thread.last_sent_at }}">{{ thread.last_sent_at }}</time>
@@ -119,44 +84,36 @@
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p class="empty-note">No message threads yet.</p>
+                        <p class="empty-note">
+                            {% if search_query %}
+                                No joined study groups match your search.
+                            {% else %}
+                                Join a study group to see its chat here.
+                            {% endif %}
+                        </p>
                     {% endif %}
                 </section>
             </aside>
 
-            <section class="chat-panel" aria-label="Conversation">
+            <section class="chat-panel" aria-label="Study group conversation">
                 <header class="chat-panel__header">
                     {% if active_thread %}
                         <div class="avatar avatar--large" aria-hidden="true">{{ active_thread.initials }}</div>
                         <div class="chat-panel__identity">
-                            <p class="eyebrow">Conversation</p>
-                            <h2>{{ active_thread.participant_name }}</h2>
-                            {% if active_thread.participant_major %}
-                                <p>{{ active_thread.participant_major }}</p>
-                            {% elif active_thread.participant_email %}
-                                <p>{{ active_thread.participant_email }}</p>
-                            {% else %}
-                                <p>Direct message</p>
-                            {% endif %}
-                        </div>
-                    {% elif selected_recipient %}
-                        <div class="avatar avatar--large" aria-hidden="true">{{ selected_recipient.initials or "SC" }}</div>
-                        <div class="chat-panel__identity">
-                            <p class="eyebrow">New direct message</p>
-                            <h2>{{ selected_recipient.name }}</h2>
-                            {% if selected_recipient.major %}
-                                <p>{{ selected_recipient.major }}</p>
-                            {% elif selected_recipient.email %}
-                                <p>{{ selected_recipient.email }}</p>
-                            {% else %}
-                                <p>Southern student</p>
-                            {% endif %}
+                            <p class="eyebrow">Group chat</p>
+                            <h2>{{ active_thread.group_title }}</h2>
+                            <p>
+                                {{ active_thread.group_subject }}
+                                {% if active_thread.member_count %}
+                                    <span>{{ active_thread.member_count }} member{% if active_thread.member_count != 1 %}s{% endif %}</span>
+                                {% endif %}
+                            </p>
                         </div>
                     {% else %}
                         <div class="chat-panel__identity">
-                            <p class="eyebrow">Conversation</p>
-                            <h2>No conversation selected</h2>
-                            <p>Select a recent chat or find a classmate.</p>
+                            <p class="eyebrow">Group chat</p>
+                            <h2>No study group selected</h2>
+                            <p>Your joined study groups will appear in the chat list.</p>
                         </div>
                     {% endif %}
                 </header>
@@ -164,7 +121,7 @@
                 <div class="message-stream" aria-live="polite">
                     {% if messages %}
                         <div class="message-stream__marker" aria-hidden="true">
-                            <span>Conversation</span>
+                            <span>Group chat</span>
                         </div>
                         {% for message in messages %}
                             <article class="message-bubble{% if message.is_mine %} message-bubble--mine{% else %} message-bubble--theirs{% endif %}">
@@ -177,17 +134,17 @@
                                 {% endif %}
                             </article>
                         {% endfor %}
-                    {% elif selected_recipient %}
+                    {% elif active_thread %}
                         <div class="empty-state">
                             <p class="eyebrow">Ready</p>
-                            <h3>Start a direct message</h3>
-                            <p>Send the first message to create this chat.</p>
+                            <h3>Start the group chat</h3>
+                            <p>Messages sent here are visible to current group members.</p>
                         </div>
                     {% else %}
                         <div class="empty-state">
-                            <p class="eyebrow">Inbox</p>
-                            <h3>Choose a chat</h3>
-                            <p>Select a recent chat or search for a classmate.</p>
+                            <p class="eyebrow">Groups</p>
+                            <h3>No chat selected</h3>
+                            <p>Select a study group chat from the list.</p>
                         </div>
                     {% endif %}
                 </div>
@@ -195,8 +152,9 @@
                 <form id="message-composer" class="composer" method="post" action="{{ url_for('messages.send_message') }}">
                     {% if active_thread %}
                         <input type="hidden" name="conversation_id" value="{{ active_thread.conversation_id }}">
-                    {% elif selected_recipient %}
-                        <input type="hidden" name="recipient_id" value="{{ selected_recipient.id }}">
+                        <input type="hidden" name="group_id" value="{{ active_thread.group_id }}">
+                    {% endif %}
+                    {% if search_query %}
                         <input type="hidden" name="q" value="{{ search_query }}">
                     {% endif %}
                     <label for="content">Message</label>
@@ -207,9 +165,9 @@
                             rows="2"
                             placeholder="Type your message..."
                             required
-                            {% if not active_thread and not selected_recipient %}disabled{% endif %}
+                            {% if not active_thread %}disabled{% endif %}
                         ></textarea>
-                        <button type="submit" {% if not active_thread and not selected_recipient %}disabled{% endif %}>Send</button>
+                        <button type="submit" {% if not active_thread %}disabled{% endif %}>Send</button>
                     </div>
                 </form>
             </section>

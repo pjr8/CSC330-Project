@@ -17,28 +17,39 @@ def inbox() -> str:
 
     search_query = request.args.get("q", "").strip()
     requested_chat_id = request.args.get("chat", "").strip()
-    requested_recipient_id = request.args.get("recipient", "").strip()
+    requested_group_id = request.args.get("group", "").strip()
 
-    threads = [
-        _thread_view(thread)
-        for thread in store.list_user_dm_threads(current_user_id)
+    all_threads = [
+        _group_thread_view(thread)
+        for thread in _list_group_chats(store, current_user_id)
     ]
-    search_results = _search_results(store, current_user_id, search_query)
-    selected_recipient = _selected_recipient(
-        requested_recipient_id,
-        search_results,
-    )
+    threads = _filter_threads(all_threads, search_query)
 
     active_chat_id = requested_chat_id
-    if not active_chat_id and selected_recipient is None and not search_query and threads:
+    if requested_group_id and not active_chat_id:
+        requested_group_thread = _group_chat_for_group(
+            store,
+            current_user_id,
+            requested_group_id,
+        )
+        if requested_group_thread is not None:
+            requested_group_view = _group_thread_view(requested_group_thread)
+            active_chat_id = requested_group_view["conversation_id"]
+            if not any(
+                thread["conversation_id"] == requested_group_view["conversation_id"]
+                for thread in threads
+            ):
+                threads = [requested_group_view, *threads]
+
+    if not active_chat_id and threads:
         active_chat_id = threads[0]["conversation_id"]
 
     active_thread: dict[str, Any] | None = None
     thread_messages: list[dict[str, Any]] = []
     if active_chat_id:
-        thread = store.get_dm_thread_messages(current_user_id, active_chat_id)
+        thread = _get_group_thread_messages(store, current_user_id, active_chat_id)
         if thread is not None:
-            active_thread = _thread_view(_field(thread, "conversation", default={}))
+            active_thread = _group_thread_view(_field(thread, "conversation", default={}))
             if not active_thread["conversation_id"]:
                 active_thread["conversation_id"] = active_chat_id
             thread_messages = [
@@ -56,8 +67,6 @@ def inbox() -> str:
         active_thread=active_thread,
         messages=thread_messages,
         search_query=search_query,
-        search_results=search_results,
-        selected_recipient=selected_recipient,
     )
 
 
@@ -69,24 +78,25 @@ def send_message():
 
     content = request.form.get("content", request.form.get("message", "")).strip()
     conversation_id = request.form.get("conversation_id", "").strip()
-    recipient_id = request.form.get("recipient_id", "").strip()
+    group_id = request.form.get("group_id", "").strip()
     search_query = request.form.get("q", "").strip()
 
     if content:
-        result = store.send_direct_message(
+        result = _send_group_message(
+            store,
             current_user_id,
-            recipient_id=recipient_id or None,
+            group_id=group_id or None,
             conversation_id=conversation_id or None,
             content=content,
         )
         next_chat_id = _field(result, "conversation_id", default=conversation_id)
         if next_chat_id:
-            return redirect(_messages_url(chat=str(next_chat_id)))
+            return redirect(_messages_url(chat=str(next_chat_id), q=search_query))
 
     if conversation_id:
-        return redirect(_messages_url(chat=conversation_id))
-    if recipient_id:
-        return redirect(_messages_url(recipient=recipient_id, q=search_query))
+        return redirect(_messages_url(chat=conversation_id, q=search_query))
+    if group_id:
+        return redirect(_messages_url(group=group_id, q=search_query))
     return redirect("/messages")
 
 
@@ -103,84 +113,107 @@ def _current_user_id(current_user: Any) -> str:
     return str(user_id)
 
 
-def _search_results(
+def _list_group_chats(store: Any, current_user_id: str) -> list[Any]:
+    return store.list_user_study_group_chats(current_user_id)
+
+
+def _group_chat_for_group(
     store: Any,
     current_user_id: str,
+    group_id: str,
+) -> Any | None:
+    get_chat = getattr(store, "get_study_group_chat_for_group", None)
+    if get_chat is None:
+        return None
+
+    return get_chat(current_user_id, group_id)
+
+
+def _get_group_thread_messages(
+    store: Any,
+    current_user_id: str,
+    conversation_id: str,
+) -> Any | None:
+    return store.get_study_group_thread_messages(current_user_id, conversation_id)
+
+
+def _send_group_message(
+    store: Any,
+    current_user_id: str,
+    *,
+    group_id: str | None,
+    conversation_id: str | None,
+    content: str,
+) -> Any | None:
+    return store.send_study_group_message(
+        current_user_id,
+        group_id=group_id,
+        conversation_id=conversation_id,
+        content=content,
+    )
+
+
+def _filter_threads(
+    threads: list[dict[str, Any]],
     search_query: str,
 ) -> list[dict[str, Any]]:
-    if not search_query:
-        return []
+    terms = search_query.casefold().split()
+    if not terms:
+        return threads
 
     return [
-        _user_result_view(user)
-        for user in store.search_users_for_dm(current_user_id, search_query)
+        thread
+        for thread in threads
+        if all(term in _thread_search_text(thread) for term in terms)
     ]
 
 
-def _selected_recipient(
-    recipient_id: str,
-    search_results: list[dict[str, Any]],
-) -> dict[str, Any] | None:
-    if not recipient_id:
-        return None
-
-    for user in search_results:
-        if str(user["id"]) == recipient_id:
-            return user
-
-    return {
-        "id": recipient_id,
-        "name": "Selected student",
-        "email": "",
-        "major": "",
-    }
+def _thread_search_text(thread: dict[str, Any]) -> str:
+    return " ".join(
+        str(thread.get(field_name, ""))
+        for field_name in (
+            "group_title",
+            "group_subject",
+            "group_location",
+            "group_modality",
+            "last_message",
+        )
+    ).casefold()
 
 
-def _thread_view(thread: Any) -> dict[str, Any]:
-    first_name = _field(thread, "first_name", "firstName", default="")
-    last_name = _field(thread, "last_name", "lastName", default="")
-    email = _field(thread, "scsu_email", "email", "scsuEmail", default="")
-    participant_name = _field(
+def _group_thread_view(thread: Any) -> dict[str, Any]:
+    group_title = _field(
         thread,
+        "group_title",
+        "title",
         "participant_name",
         "display_name",
-        "full_name",
         "name",
+        default="Study group",
+    )
+    group_subject = _field(
+        thread,
+        "group_subject",
+        "subject",
+        "participant_major",
         default="",
     )
-    if not participant_name:
-        participant_name = _display_name(first_name, last_name, email, "Conversation")
+    member_count = _field(thread, "member_count", "members_count", default=0)
 
     return {
         "conversation_id": str(
             _field(thread, "conversation_id", "chat_id", "id", default="")
         ),
-        "participant_id": str(
-            _field(thread, "participant_id", "recipient_id", "user_id", default="")
-        ),
-        "participant_name": participant_name,
-        "participant_email": email,
-        "participant_major": _field(thread, "major", "participant_major", default=""),
+        "group_id": str(_field(thread, "group_id", default="")),
+        "group_title": group_title,
+        "group_subject": group_subject,
+        "group_modality": _field(thread, "group_modality", "modality", default=""),
+        "group_location": _field(thread, "group_location", "location", default=""),
+        "group_status": _field(thread, "group_status", "status", default=""),
+        "member_count": int(member_count or 0),
         "last_message": _field(thread, "last_message", "preview", default=""),
         "last_sent_at": _field(thread, "last_sent_at", "last_message_at", default=""),
-        "initials": _initials(participant_name),
-    }
-
-
-def _user_result_view(user: Any) -> dict[str, Any]:
-    first_name = _field(user, "first_name", "firstName", default="")
-    last_name = _field(user, "last_name", "lastName", default="")
-    email = _field(user, "scsu_email", "email", "scsuEmail", default="")
-    name = _field(user, "display_name", "full_name", "name", default="")
-    if not name:
-        name = _display_name(first_name, last_name, email, "Student")
-
-    return {
-        "id": str(_field(user, "id", "user_id", default="")),
-        "name": name,
-        "email": email,
-        "major": _field(user, "major", default=""),
-        "initials": _initials(name),
+        "initials": _initials(str(group_title)),
     }
 
 
@@ -241,7 +274,7 @@ def _display_name(
 def _initials(name: str) -> str:
     parts = [part for part in name.replace("@", " ").split() if part]
     if not parts:
-        return "SC"
+        return "SG"
     return "".join(part[0].upper() for part in parts[:2])
 
 

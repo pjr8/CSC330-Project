@@ -3,7 +3,7 @@
 A Flask web app for Southern Connecticut State University students to create,
 discover, join, and coordinate study groups. The app includes student account
 signup/login, SQLite-backed study group persistence, profile management, and
-direct student messaging.
+member-only study group chats.
 
 ## Features
 
@@ -13,7 +13,7 @@ direct student messaging.
 - Study group listings with joined/favorite state and available-seat filtering
 - Study group detail pages with roster, host information, and join/leave/delete actions
 - Student profile viewing and editing
-- Direct messaging with searchable student recipients and persistent conversations
+- Persistent group chats for each joined study group
 - Seeded SQLite data for local development and tests
 
 ## Tech Stack
@@ -30,7 +30,7 @@ direct student messaging.
 ```text
 .
 |-- accounts/              # Signup routes and account-store helpers
-|-- messages/              # Direct message routes
+|-- messages/              # Study group chat routes
 |-- study_groups/          # Study group listing/detail routes and view models
 |-- static/                # CSS and image assets
 |-- templates/             # Jinja HTML templates
@@ -94,7 +94,7 @@ You can also create a new account from the signup page using any
 | `/listings` | Browse available study groups |
 | `/study-groups/<group_id>` | View study group details |
 | `/create` | Create a study group |
-| `/messages` | View/search direct messages |
+| `/messages` | View/search chats for joined study groups |
 | `/profile` | View the current user's profile |
 | `/update-profile` | Edit the current user's profile |
 | `/logout` | End the current session |
@@ -118,7 +118,7 @@ your local development database.
 - `create_app()` in `studygroupapp.py` is the app factory used by both the
   development server and tests.
 - `SQLiteStudyGroupStore` in `app_store.py` owns schema creation, persistence,
-  seeded users, seeded study groups, memberships, favorites, and direct messages.
+  seeded users, seeded study groups, memberships, favorites, and study group chats.
 - Signup and login enforce Southern email addresses ending in `@southernct.edu`.
 - Study group creators are automatically added as host members when a group is
   created.
