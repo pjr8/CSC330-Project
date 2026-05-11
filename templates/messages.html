@@ -24,6 +24,20 @@
             margin-right: 15px;
         }
 
+        .home-button {
+            margin-left: auto;
+            background: white;
+            color: #003399;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .home-button:hover {
+            background: #e6e6e6;
+        }
+
         /* LAYOUT */
         .container {
             display: flex;
@@ -131,9 +145,13 @@
 
 <!-- HEADER WITH LOGO -->
 <div class="header">
-    <!-- Replace with official SCSU logo PNG -->
     <img src="{{ url_for('static', filename='images/scsu-logo.png') }}" alt="SCSU Logo">
+
     <h2>Student Messaging Portal</h2>
+
+    <a href="{{ url_for('home') }}" class="home-button">
+        Home
+    </a>
 </div>
 
 <div class="container">

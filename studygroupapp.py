@@ -75,10 +75,15 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     def messages():
         store = data_store()
         user = current_user()
+
         conversations = store.list_conversations()
-        conversation_name = request.args.get("user") or (
-            conversations[0] if conversations else "John Smith"
-        )
+
+        default_thread = "CSC 330 Group Thread"
+
+        if default_thread not in conversations:
+            conversations.insert(0, default_thread)
+
+        conversation_name = request.args.get("user") or default_thread
 
         if request.method == "POST":
             store.add_outgoing_message(
