@@ -6,6 +6,7 @@
     <title>Study Group Messages | Southern Connecticut State University</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css') }}">
+    <script src="{{ url_for('static', filename='js/messages.js') }}" defer></script>
 </head>
 <body>
     <a class="skip-link" href="#message-composer">Skip to message composer</a>
@@ -13,13 +14,18 @@
     {% set active_page = "messages" %}
     {% include "partials/_app_header.html" %}
 
-    <main class="messages-shell" aria-labelledby="messages-title">
+    <main
+        class="messages-shell"
+        aria-labelledby="messages-title"
+        data-state-url="{{ url_for('messages.message_state') }}"
+        data-inbox-url="{{ url_for('messages.inbox') }}"
+    >
         <section class="messages-toolbar">
             <div>
                 <p class="eyebrow">Study group chats</p>
                 <h1 id="messages-title">Messages</h1>
             </div>
-            <div class="messages-toolbar__summary" aria-label="Chat summary">
+            <div class="messages-toolbar__summary" aria-label="Chat summary" data-chat-summary>
                 <span><strong>{{ threads|length }}</strong> group chat{% if threads|length != 1 %}s{% endif %}</span>
                 {% if active_thread %}
                     <span>Open study group</span>
@@ -31,14 +37,14 @@
 
         <div class="messages-layout">
             <aside class="conversation-panel" aria-label="Study group chat navigation">
-                <form class="search-form" method="get" action="{{ url_for('messages.inbox') }}" role="search">
-                    <div class="rail-heading">
+                <form class="search-form" method="get" action="{{ url_for('messages.inbox') }}" role="search" data-search-form>
+                    <div class="rail-heading" data-search-heading>
                         <div>
                             <p class="eyebrow">Find</p>
                             <label for="q">Study group lookup</label>
                         </div>
                         {% if search_query %}
-                            <a class="rail-action" href="{{ url_for('messages.inbox') }}">Clear</a>
+                            <a class="rail-action" href="{{ url_for('messages.inbox') }}" data-clear-search>Clear</a>
                         {% endif %}
                     </div>
                     <div class="search-form__row">
@@ -54,13 +60,13 @@
                     </div>
                 </form>
 
-                <section class="thread-list" aria-labelledby="thread-list-title">
+                <section class="thread-list" aria-labelledby="thread-list-title" data-thread-list>
                     <div class="rail-heading">
                         <div>
                             <p class="eyebrow">Groups</p>
                             <h2 id="thread-list-title">My chats</h2>
                         </div>
-                        <p>{{ threads|length }}</p>
+                        <p data-thread-count>{{ threads|length }}</p>
                     </div>
                     {% if threads %}
                         <ul class="person-list">
@@ -69,6 +75,8 @@
                                     <a
                                         class="person-row{% if active_chat_id == thread.conversation_id %} person-row--active{% endif %}"
                                         href="{{ url_for('messages.inbox', chat=thread.conversation_id, q=search_query) }}"
+                                        data-thread-link
+                                        data-chat-id="{{ thread.conversation_id }}"
                                         {% if active_chat_id == thread.conversation_id %}aria-current="page"{% endif %}
                                     >
                                         <span class="avatar" aria-hidden="true">{{ thread.initials }}</span>
@@ -77,7 +85,7 @@
                                             <span>{{ thread.last_message or thread.group_subject }}</span>
                                         </span>
                                         {% if thread.last_sent_at %}
-                                            <time datetime="{{ thread.last_sent_at }}">{{ thread.last_sent_at }}</time>
+                                            <time datetime="{{ thread.last_sent_at }}">{{ thread.last_sent_at_label }}</time>
                                         {% endif %}
                                     </a>
                                 </li>
@@ -96,7 +104,7 @@
             </aside>
 
             <section class="chat-panel" aria-label="Study group conversation">
-                <header class="chat-panel__header">
+                <header class="chat-panel__header" data-chat-header>
                     {% if active_thread %}
                         <div class="avatar avatar--large" aria-hidden="true">{{ active_thread.initials }}</div>
                         <div class="chat-panel__identity">
@@ -118,19 +126,28 @@
                     {% endif %}
                 </header>
 
-                <div class="message-stream" aria-live="polite">
+                <div
+                    class="message-stream"
+                    aria-live="polite"
+                    data-live-chat-url="{{ url_for('messages.message_updates') }}"
+                    data-chat-id="{% if active_thread %}{{ active_thread.conversation_id }}{% endif %}"
+                >
                     {% if messages %}
                         <div class="message-stream__marker" aria-hidden="true">
                             <span>Group chat</span>
                         </div>
                         {% for message in messages %}
-                            <article class="message-bubble{% if message.is_mine %} message-bubble--mine{% else %} message-bubble--theirs{% endif %}">
+                            <article
+                                class="message-bubble{% if message.is_mine %} message-bubble--mine{% else %} message-bubble--theirs{% endif %}"
+                                data-message-id="{{ message.id }}"
+                                data-message-sent-at="{{ message.sent_at }}"
+                            >
                                 {% if not message.is_mine %}
                                     <p class="message-bubble__sender">{{ message.sender_name }}</p>
                                 {% endif %}
                                 <p>{{ message.content }}</p>
                                 {% if message.sent_at %}
-                                    <time datetime="{{ message.sent_at }}">{{ message.sent_at }}</time>
+                                    <time datetime="{{ message.sent_at }}">{{ message.sent_at_label }}</time>
                                 {% endif %}
                             </article>
                         {% endfor %}
@@ -149,14 +166,10 @@
                     {% endif %}
                 </div>
 
-                <form id="message-composer" class="composer" method="post" action="{{ url_for('messages.send_message') }}">
-                    {% if active_thread %}
-                        <input type="hidden" name="conversation_id" value="{{ active_thread.conversation_id }}">
-                        <input type="hidden" name="group_id" value="{{ active_thread.group_id }}">
-                    {% endif %}
-                    {% if search_query %}
-                        <input type="hidden" name="q" value="{{ search_query }}">
-                    {% endif %}
+                <form id="message-composer" class="composer" method="post" action="{{ url_for('messages.send_message') }}" data-composer>
+                    <input type="hidden" name="conversation_id" value="{% if active_thread %}{{ active_thread.conversation_id }}{% endif %}">
+                    <input type="hidden" name="group_id" value="{% if active_thread %}{{ active_thread.group_id }}{% endif %}">
+                    <input type="hidden" name="q" value="{{ search_query }}">
                     <label for="content">Message</label>
                     <div class="composer__row">
                         <textarea

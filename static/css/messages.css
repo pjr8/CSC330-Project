@@ -180,6 +180,7 @@ h3 {
 
 .conversation-panel {
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 1.15rem;
@@ -379,12 +380,15 @@ h3 {
 
 .chat-panel {
     min-width: 0;
+    min-height: 0;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
     background: var(--surface);
 }
 
 .chat-panel__header {
+    min-width: 0;
     min-height: 86px;
     display: flex;
     align-items: center;
@@ -406,11 +410,13 @@ h3 {
 
 .message-stream {
     min-height: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
     gap: 0.65rem;
     padding: 1.35rem;
     overflow-y: auto;
+    overscroll-behavior: contain;
     background:
         linear-gradient(180deg, rgba(248, 250, 253, 0.96), rgba(255, 255, 255, 0.98) 42%),
         var(--surface);
@@ -437,6 +443,7 @@ h3 {
 }
 
 .message-bubble {
+    flex: 0 0 auto;
     width: fit-content;
     max-width: min(68ch, 74%);
     padding: 0.72rem 0.85rem;
@@ -495,6 +502,8 @@ h3 {
 }
 
 .composer {
+    min-width: 0;
+    flex: 0 0 auto;
     padding: 1rem 1.25rem;
     background: var(--surface);
     border-top: 1px solid var(--line);
