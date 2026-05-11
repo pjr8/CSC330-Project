@@ -31,11 +31,13 @@
                     <span class="state-badge state-badge--joined">{% if group.can_delete %}Owner{% else %}Joined{% endif %}</span>
                     {% if group.can_delete %}
                         <p>You host this study group.</p>
+                        <a class="button button--primary" href="{{ url_for('messages.inbox', group=group.id) }}">Open chat</a>
                         <form class="join-form" method="post" action="{{ url_for('study_groups.delete_group', group_id=group.id) }}">
                             <button class="button button--danger" type="submit">Delete group</button>
                         </form>
                     {% else %}
                         <p>You are on this roster.</p>
+                        <a class="button button--primary" href="{{ url_for('messages.inbox', group=group.id) }}">Open chat</a>
                         <form class="join-form" method="post" action="{{ url_for('study_groups.leave_group', group_id=group.id) }}">
                             <input type="hidden" name="next" value="detail">
                             <button class="button button--danger" type="submit">Leave group</button>

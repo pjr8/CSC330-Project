@@ -25,62 +25,73 @@ class FakeMessageStore:
         self.current_user = FakeUser()
         self.sent_messages: list[dict[str, Any]] = []
         self.loaded_threads: list[str] = []
-        self.searches: list[tuple[str, str]] = []
+        self.loaded_groups: list[str] = []
         self.threads = [
             {
-                "conversation_id": "chat-1",
-                "participant_id": "u-alex",
-                "participant_name": "Alex Mitchell",
-                "participant_major": "Computer Science",
-                "last_message": "See you in the library.",
-                "last_sent_at": "2026-05-04T10:05:00",
-            }
+                "conversation_id": "chat-software",
+                "group_id": "group-software",
+                "group_title": "Software Design Studio",
+                "group_subject": "CSC 330 - Software Engineering",
+                "group_location": "Buley Library, Room 205",
+                "member_count": 3,
+                "last_message": "I will review the Flask handlers before we meet.",
+                "last_sent_at": "2026-05-04T15:15:00",
+            },
+            {
+                "conversation_id": "chat-calculus",
+                "group_id": "group-calculus",
+                "group_title": "Calculus II Problem Session",
+                "group_subject": "MAT 221 - Calculus II",
+                "group_location": "Engleman Hall, A112",
+                "member_count": 2,
+                "last_message": "",
+                "last_sent_at": "",
+            },
         ]
         self.thread_messages = {
-            "chat-1": {
+            "chat-software": {
                 "conversation": self.threads[0],
                 "messages": [
                     {
                         "id": "m-1",
                         "sender_name": "Alex Mitchell",
-                        "content": "Are you bringing the notes?",
-                        "sent_at": "2026-05-04T10:00:00",
+                        "content": "I added the route test checklist.",
+                        "sent_at": "2026-05-04T15:00:00",
                         "is_mine": False,
                     },
                     {
                         "id": "m-2",
                         "sender_name": "Test User",
-                        "content": "Yes, I have the packet.",
-                        "sent_at": "2026-05-04T10:05:00",
+                        "content": "I will review the Flask handlers before we meet.",
+                        "sent_at": "2026-05-04T15:15:00",
                         "is_mine": True,
                     },
                 ],
-            }
-        }
-        self.search_result = {
-            "id": "u-rowan",
-            "display_name": "Rowan Patel",
-            "scsu_email": "rowan.patel@southernct.edu",
-            "major": "Mathematics",
+            },
+            "chat-calculus": {
+                "conversation": self.threads[1],
+                "messages": [],
+            },
         }
 
     def user_for_session(self, user_id: str | None) -> FakeUser:
         return self.current_user
 
-    def list_user_dm_threads(self, current_user_id: str) -> list[dict[str, str]]:
+    def list_user_study_group_chats(self, current_user_id: str) -> list[dict[str, Any]]:
         return self.threads
 
-    def search_users_for_dm(
+    def get_study_group_chat_for_group(
         self,
         current_user_id: str,
-        query: str,
-    ) -> list[dict[str, str]]:
-        self.searches.append((current_user_id, query))
-        if query.lower() == "row":
-            return [self.search_result]
-        return []
+        group_id: str,
+    ) -> dict[str, Any] | None:
+        self.loaded_groups.append(group_id)
+        return next(
+            (thread for thread in self.threads if thread["group_id"] == group_id),
+            None,
+        )
 
-    def get_dm_thread_messages(
+    def get_study_group_thread_messages(
         self,
         current_user_id: str,
         conversation_id: str,
@@ -88,24 +99,25 @@ class FakeMessageStore:
         self.loaded_threads.append(conversation_id)
         return self.thread_messages.get(conversation_id)
 
-    def send_direct_message(
+    def send_study_group_message(
         self,
         current_user_id: str,
         *,
-        recipient_id: str | None = None,
+        group_id: str | None = None,
         conversation_id: str | None = None,
         content: str = "",
     ) -> dict[str, object] | None:
         self.sent_messages.append(
             {
                 "current_user_id": current_user_id,
-                "recipient_id": recipient_id,
+                "group_id": group_id,
                 "conversation_id": conversation_id,
                 "content": content,
             }
         )
         return {
             "conversation_id": conversation_id or "chat-new",
+            "group_id": group_id or "group-new",
             "message": {"content": content},
         }
 
@@ -153,81 +165,66 @@ class MessagesRouteTestCase(unittest.TestCase):
         def logout():
             return ""
 
-    def test_get_messages_renders_thread_and_external_stylesheet(self) -> None:
-        response = self.client.get("/messages?chat=chat-1")
+    def test_get_messages_renders_group_thread_and_external_stylesheet(self) -> None:
+        response = self.client.get("/messages?chat=chat-software")
 
         self.assertEqual(response.status_code, 200)
         page = response.get_data(as_text=True)
-        self.assertIn("Alex Mitchell", page)
-        self.assertIn("Are you bringing the notes?", page)
-        self.assertIn("Yes, I have the packet.", page)
+        self.assertIn("Software Design Studio", page)
+        self.assertIn("CSC 330 - Software Engineering", page)
+        self.assertIn("I added the route test checklist.", page)
+        self.assertIn("I will review the Flask handlers before we meet.", page)
         self.assertIn("message-bubble--theirs", page)
         self.assertIn("message-bubble--mine", page)
-        self.assertIn('name="conversation_id" value="chat-1"', page)
+        self.assertIn('name="conversation_id" value="chat-software"', page)
+        self.assertIn('name="group_id" value="group-software"', page)
         self.assertIn("css/messages.css", page)
+        self.assertNotIn("Direct messages", page)
         self.assertNotIn("<style", page)
         self.assertNotIn(" style=", page)
-        self.assertEqual(self.store.loaded_threads, ["chat-1"])
+        self.assertEqual(self.store.loaded_threads, ["chat-software"])
 
-    def test_search_recipient_stays_in_compose_state_without_creating_chat(self) -> None:
-        response = self.client.get("/messages?q=row&recipient=u-rowan")
+    def test_group_search_filters_and_opens_matching_chat(self) -> None:
+        response = self.client.get("/messages?q=calculus")
 
         self.assertEqual(response.status_code, 200)
         page = response.get_data(as_text=True)
-        self.assertIn("Rowan Patel", page)
-        self.assertIn("Start a direct message", page)
-        self.assertIn(
-            "Send the first message to create this chat.",
-            page,
-        )
-        self.assertIn('name="recipient_id" value="u-rowan"', page)
-        self.assertIn("Alex Mitchell", page)
-        self.assertEqual(self.store.searches, [("u-current", "row")])
-        self.assertEqual(self.store.loaded_threads, [])
+        self.assertIn("Calculus II Problem Session", page)
+        self.assertNotIn("Software Design Studio", page)
+        self.assertIn("Start the group chat", page)
+        self.assertIn('name="conversation_id" value="chat-calculus"', page)
+        self.assertEqual(self.store.loaded_threads, ["chat-calculus"])
         self.assertEqual(self.store.sent_messages, [])
 
-    def test_send_to_recipient_creates_chat_on_post(self) -> None:
+    def test_group_deep_link_selects_group_chat(self) -> None:
+        response = self.client.get("/messages?group=group-calculus")
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertIn("Calculus II Problem Session", page)
+        self.assertIn('name="conversation_id" value="chat-calculus"', page)
+        self.assertEqual(self.store.loaded_groups, ["group-calculus"])
+        self.assertEqual(self.store.loaded_threads, ["chat-calculus"])
+
+    def test_send_to_existing_group_chat_uses_conversation_and_group_id(self) -> None:
         response = self.client.post(
             "/messages/send",
             data={
-                "recipient_id": "u-rowan",
-                "content": "Want to review calculus?",
-                "q": "row",
-            },
-        )
-
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.headers["Location"], "/messages?chat=chat-new")
-        self.assertEqual(
-            self.store.sent_messages,
-            [
-                {
-                    "current_user_id": "u-current",
-                    "recipient_id": "u-rowan",
-                    "conversation_id": None,
-                    "content": "Want to review calculus?",
-                }
-            ],
-        )
-
-    def test_send_to_existing_chat_uses_conversation_id(self) -> None:
-        response = self.client.post(
-            "/messages/send",
-            data={
-                "conversation_id": "chat-1",
+                "conversation_id": "chat-software",
+                "group_id": "group-software",
                 "content": "I am on my way.",
             },
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.headers["Location"], "/messages?chat=chat-1")
+        self.assertEqual(response.headers["Location"], "/messages?chat=chat-software")
         self.assertEqual(
             self.store.sent_messages,
             [
                 {
                     "current_user_id": "u-current",
-                    "recipient_id": None,
-                    "conversation_id": "chat-1",
+                    "group_id": "group-software",
+                    "conversation_id": "chat-software",
                     "content": "I am on my way.",
                 }
             ],
@@ -237,17 +234,14 @@ class MessagesRouteTestCase(unittest.TestCase):
         response = self.client.post(
             "/messages/send",
             data={
-                "recipient_id": "u-rowan",
+                "conversation_id": "chat-software",
+                "group_id": "group-software",
                 "content": "   ",
-                "q": "row",
             },
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(
-            response.headers["Location"],
-            "/messages?recipient=u-rowan&q=row",
-        )
+        self.assertEqual(response.headers["Location"], "/messages?chat=chat-software")
         self.assertEqual(self.store.sent_messages, [])
 
 

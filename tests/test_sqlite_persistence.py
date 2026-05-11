@@ -67,25 +67,33 @@ class SQLitePersistenceTestCase(unittest.TestCase):
         self.login_client(first_client)
 
         store = SQLiteStudyGroupStore(self.database_path)
-        sarah = store.find_by_email("sarah.lee@southernct.edu")
-        assert sarah is not None
+        test_user = store.find_by_email("test@southernct.edu")
+        assert test_user is not None
+        software_thread = next(
+            thread
+            for thread in store.list_user_study_group_chats(test_user.id)
+            if thread["group_title"] == "Software Design Studio"
+        )
 
         first_client.post(
             "/messages/send",
             data={
-                "recipient_id": str(sarah.id),
-                "content": "Can you review the database schema?",
+                "conversation_id": software_thread["conversation_id"],
+                "group_id": software_thread["group_id"],
+                "content": "Can everyone review the database schema?",
             },
         )
 
         second_app = self.create_test_app()
         second_client = second_app.test_client()
         self.login_client(second_client)
-        response = second_client.get("/messages")
+        response = second_client.get(
+            f"/messages?chat={software_thread['conversation_id']}"
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(
-            "Can you review the database schema?",
+            "Can everyone review the database schema?",
             response.get_data(as_text=True),
         )
 

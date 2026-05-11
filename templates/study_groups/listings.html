@@ -109,6 +109,7 @@
                                 <div class="group-actions">
                                     {% if group.is_member %}
                                         <span class="button button--joined">{% if group.can_delete %}Owner{% else %}Joined{% endif %}</span>
+                                        <a class="button button--text" href="{{ url_for('messages.inbox', group=group.id) }}">Chat</a>
                                         {% if group.can_delete %}
                                             <form class="join-form" method="post" action="{{ url_for('study_groups.delete_group', group_id=group.id) }}">
                                                 <button class="button button--danger" type="submit">Delete</button>
