@@ -23,6 +23,13 @@ class SQLitePersistenceTestCase(unittest.TestCase):
             }
         )
 
+    def login_client(self, client, email: str = "test@southernct.edu") -> None:
+        store = SQLiteStudyGroupStore(self.database_path)
+        user = store.find_by_email(email)
+        assert user is not None
+        with client.session_transaction() as session:
+            session["user_id"] = str(user.id)
+
     def test_signup_persists_user_to_sqlite(self) -> None:
         app = self.create_test_app()
         client = app.test_client()
@@ -33,15 +40,17 @@ class SQLitePersistenceTestCase(unittest.TestCase):
                 "firstName": "Maya",
                 "lastName": "Chen",
                 "scsuEmail": "maya.chen@southernct.edu",
+                "contactInfo": "maya.chen@southernct.edu",
                 "password": "study-pass-123",
                 "confirmPassword": "study-pass-123",
-                "major": "Computer Science",
-                "interests": "Databases, Software testing",
-                "bio": "I like persistent campus apps.",
             },
         )
 
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers["Location"], "/home")
+        home_response = client.get("/home")
+        self.assertEqual(home_response.status_code, 200)
+        self.assertIn("Welcome, Maya", home_response.get_data(as_text=True))
 
         store = SQLiteStudyGroupStore(self.database_path)
         user = store.find_by_email("maya.chen@southernct.edu")
@@ -49,30 +58,49 @@ class SQLitePersistenceTestCase(unittest.TestCase):
         self.assertIsNotNone(user)
         assert user is not None
         self.assertEqual(user.firstName, "Maya")
-        self.assertEqual(user.interests, ["Databases", "Software testing"])
+        self.assertEqual(user.interests, [])
+        self.assertEqual(user.contactInfo, "maya.chen@southernct.edu")
 
     def test_messages_persist_across_app_instances(self) -> None:
         first_app = self.create_test_app()
         first_client = first_app.test_client()
+        self.login_client(first_client)
+
+        store = SQLiteStudyGroupStore(self.database_path)
+        test_user = store.find_by_email("test@southernct.edu")
+        assert test_user is not None
+        software_thread = next(
+            thread
+            for thread in store.list_user_study_group_chats(test_user.id)
+            if thread["group_title"] == "Software Design Studio"
+        )
 
         first_client.post(
-            "/messages?user=Sarah%20Lee",
-            data={"message": "Can you review the database schema?"},
+            "/messages/send",
+            data={
+                "conversation_id": software_thread["conversation_id"],
+                "group_id": software_thread["group_id"],
+                "content": "Can everyone review the database schema?",
+            },
         )
 
         second_app = self.create_test_app()
         second_client = second_app.test_client()
-        response = second_client.get("/messages?user=Sarah%20Lee")
+        self.login_client(second_client)
+        response = second_client.get(
+            f"/messages?chat={software_thread['conversation_id']}"
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(
-            "Can you review the database schema?",
+            "Can everyone review the database schema?",
             response.get_data(as_text=True),
         )
 
     def test_profile_updates_persist_across_app_instances(self) -> None:
         first_app = self.create_test_app()
         first_client = first_app.test_client()
+        self.login_client(first_client)
 
         first_client.post(
             "/update-profile",
@@ -88,12 +116,22 @@ class SQLitePersistenceTestCase(unittest.TestCase):
 
         second_app = self.create_test_app()
         second_client = second_app.test_client()
+        self.login_client(second_client)
         response = second_client.get("/profile")
         page = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Data Science", page)
         self.assertIn("Updated through SQLite.", page)
+        self.assertIn("profile-panel", page)
+
+        edit_response = second_client.get("/update-profile")
+        edit_page = edit_response.get_data(as_text=True)
+
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertIn("Edit Profile", edit_page)
+        self.assertIn('name="interests"', edit_page)
+        self.assertIn("SQLite, Flask", edit_page)
 
 
 if __name__ == "__main__":

@@ -1,45 +1,60 @@
 {% extends "base.html" %}
 
-{% block title %}Update Profile{% endblock %}
+{% block title %}Edit Profile | SCSU Study Group Scheduler{% endblock %}
 
 {% block content %}
+<section class="form-intro" aria-labelledby="edit-profile-title">
+  <p class="eyebrow">Profile</p>
+  <h1 id="edit-profile-title">Edit Profile</h1>
+  <p class="form-intro__copy">Keep your study interests and regular hangout spots current.</p>
+</section>
 
-<div class="row justify-content-center">
-
-  <div class="col-md-6">
-
-    <div class="card p-4">
-
-      <h4 class="mb-3">Update Profile</h4>
-
-      <form method="POST">
-
-        <input class="form-control mb-2" name="firstName" placeholder="First Name" value="{{ user.firstName }}">
-        <input class="form-control mb-2" name="lastName" placeholder="Last Name" value="{{ user.lastName }}">
-        <input class="form-control mb-2" name="major" placeholder="Major" value="{{ user.major }}">
-
-        <textarea class="form-control mb-2" name="bio">{{ user.bio }}</textarea>
-
-        <input class="form-control mb-3"
-               name="interests"
-               placeholder="Interests (comma separated)"
-               value="{{ user.interests | join(', ') }}">
-
-         <!-- CONTACT FIELD (NEW) -->
-        <textarea class="form-control mb-3"
-                  name="contactInfo"
-                  placeholder="Best ways to reach you (email, discord, etc.)">{{ user.contactInfo }}</textarea>
-
-        <button class="btn btn-primary w-100">
-          Save Changes
-        </button>
-
-      </form>
-
+<form class="profile-form" method="POST">
+  <div class="field-grid">
+    <div class="field">
+      <label for="firstName">First name</label>
+      <input id="firstName" name="firstName" type="text" autocomplete="given-name" value="{{ user.firstName }}">
     </div>
 
+    <div class="field">
+      <label for="lastName">Last name</label>
+      <input id="lastName" name="lastName" type="text" autocomplete="family-name" value="{{ user.lastName }}">
+    </div>
+
+    <div class="field field--wide">
+      <label for="major">Major</label>
+      <input id="major" name="major" type="text" value="{{ user.major }}">
+    </div>
+
+    <div class="field field--wide">
+      <label for="bio">Bio</label>
+      <textarea id="bio" name="bio" rows="4" placeholder="Courses, study habits, or academic goals">{{ user.bio }}</textarea>
+    </div>
+
+    <div class="field field--wide">
+      <label for="interests">Interests</label>
+      <input
+        id="interests"
+        name="interests"
+        type="text"
+        placeholder="Software design, Mathematics, Research writing"
+        value="{{ user.interests | join(', ') }}">
+      <p class="field-hint">Separate interests with commas.</p>
+    </div>
+
+    <div class="field field--wide">
+      <label for="contactInfo">Where to find me</label>
+      <textarea
+        id="contactInfo"
+        name="contactInfo"
+        rows="3"
+        placeholder="Library second floor, student center, or Discord study rooms">{{ user.contactInfo }}</textarea>
+    </div>
   </div>
 
-</div>
-
+  <div class="form-actions">
+    <a class="button button--text" href="{{ url_for('profile') }}">Cancel</a>
+    <button class="button button--primary" type="submit">Save changes</button>
+  </div>
+</form>
 {% endblock %}
