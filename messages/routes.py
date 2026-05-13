@@ -15,6 +15,8 @@ from flask import (
     session,
 )
 
+from email_notifications import send_group_message_notification
+
 
 messages_bp = Blueprint("messages", __name__)
 EASTERN_TIME = ZoneInfo("America/New_York")
@@ -63,6 +65,8 @@ def send_message():
         )
         next_chat_id = _field(result, "conversation_id", default=conversation_id)
         sent = result is not None
+        if sent:
+            _send_message_email_notification(store, current_user_id, result)
         if next_chat_id:
             if _wants_json_response():
                 return _json_state_response(
@@ -284,6 +288,35 @@ def _send_group_message(
         group_id=group_id,
         conversation_id=conversation_id,
         content=content,
+    )
+
+
+def _send_message_email_notification(
+    store: Any,
+    current_user_id: str,
+    result: Any,
+) -> None:
+    group_id = _field(result, "group_id", default="")
+    message = _field(result, "message", default=None)
+    content = _field(message, "content", default="")
+    if not group_id or not content:
+        return
+
+    notification_data_loader = getattr(store, "group_message_notification_data", None)
+    if notification_data_loader is None:
+        return
+
+    notification_data = notification_data_loader(group_id, current_user_id)
+    if notification_data is None:
+        return
+
+    send_group_message_notification(
+        recipients=list(_field(notification_data, "recipients", default=[])),
+        group_title=str(_field(notification_data, "group_title", default="Study group")),
+        sender_name=str(
+            _field(notification_data, "sender_name", default="A group member")
+        ),
+        content=str(content),
     )
 
 
