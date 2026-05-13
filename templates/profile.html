@@ -6,17 +6,17 @@
 <section class="profile-hero" aria-labelledby="profile-title">
   <div class="profile-identity">
     <img
-      src="{{ user.profileImageUrl if user.profileImageUrl else url_for('static', filename='img/default-user.svg') }}"
+      src="{{ profile_user.profileImageUrl if profile_user.profileImageUrl else url_for('static', filename='img/default-user.svg') }}"
       class="profile-avatar"
-      alt="{{ user.firstName }} {{ user.lastName }} profile picture"
+      alt="{{ profile_user.firstName }} {{ profile_user.lastName }} profile picture"
       width="120"
       height="120">
 
     <div>
       <p class="eyebrow">Profile</p>
-      <h1 id="profile-title">{{ user.firstName }} {{ user.lastName }}</h1>
-      {% if user.major %}
-        <p class="profile-major">{{ user.major }}</p>
+      <h1 id="profile-title">{{ profile_user.firstName }} {{ profile_user.lastName }}</h1>
+      {% if profile_user.major %}
+        <p class="profile-major">{{ profile_user.major }}</p>
       {% endif %}
     </div>
   </div>
@@ -33,8 +33,8 @@
       <h2 id="profile-about-title">Study preferences</h2>
     </div>
 
-    {% if user.bio %}
-      <p class="profile-copy">{{ user.bio }}</p>
+    {% if profile_user.bio %}
+      <p class="profile-copy">{{ profile_user.bio }}</p>
     {% else %}
       <p class="empty-state">Add a short bio so classmates know how you like to study.</p>
     {% endif %}
@@ -46,9 +46,9 @@
       <h2 id="profile-interests-title">Topics</h2>
     </div>
 
-    {% if user.interests %}
+    {% if profile_user.interests %}
       <div class="interest-list" aria-label="Profile interests">
-        {% for interest in user.interests %}
+        {% for interest in profile_user.interests %}
           <span class="interest-pill">{{ interest }}</span>
         {% endfor %}
       </div>
@@ -63,8 +63,8 @@
       <h2 id="profile-contact-title">Where to find me</h2>
     </div>
 
-    {% if user.contactInfo %}
-      <p class="profile-copy">{{ user.contactInfo }}</p>
+    {% if profile_user.contactInfo %}
+      <p class="profile-copy">{{ profile_user.contactInfo }}</p>
     {% else %}
       <p class="empty-state">No regular hangout spots added yet.</p>
     {% endif %}
