@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Iterator
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -820,6 +822,62 @@ class SQLiteStudyGroupStore:
                 "message": message,
             }
 
+    def group_message_notification_data(
+        self,
+        group_id: str | UUID,
+        sender_id: str | UUID,
+    ) -> dict[str, object] | None:
+        with self._connect() as conn:
+            group_row = conn.execute(
+                "SELECT title FROM study_groups WHERE id = ?",
+                (str(group_id),),
+            ).fetchone()
+            if group_row is None:
+                return None
+
+            sender_row = conn.execute(
+                """
+                SELECT first_name, last_name, scsu_email
+                FROM users
+                WHERE id = ?
+                """,
+                (str(sender_id),),
+            ).fetchone()
+            sender_name = (
+                _display_name(
+                    User(
+                        scsuEmail=sender_row["scsu_email"],
+                        firstName=sender_row["first_name"],
+                        lastName=sender_row["last_name"],
+                    )
+                )
+                if sender_row is not None
+                else "A group member"
+            )
+
+            recipient_rows = conn.execute(
+                """
+                SELECT DISTINCT u.scsu_email
+                FROM group_memberships gm
+                JOIN users u ON u.id = gm.member_id
+                LEFT JOIN notification_preferences np ON np.user_id = u.id
+                WHERE gm.group_id = ?
+                    AND gm.status = 'active'
+                    AND u.status = 'active'
+                    AND u.id != ?
+                    AND COALESCE(np.email_enabled, 1) = 1
+                    AND COALESCE(np.message_alerts, 1) = 1
+                ORDER BY u.scsu_email
+                """,
+                (str(group_id), str(sender_id)),
+            ).fetchall()
+
+        return {
+            "group_title": group_row["title"],
+            "sender_name": sender_name,
+            "recipients": [row["scsu_email"] for row in recipient_rows],
+        }
+
     def send_direct_message(
         self,
         current_user_id: str | UUID | None,
@@ -941,11 +999,16 @@ class SQLiteStudyGroupStore:
 
         Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self.database_path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
-        return conn
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def _drop_legacy_message_tables(self, conn: sqlite3.Connection) -> None:
         message_columns = _table_columns(conn, "messages")

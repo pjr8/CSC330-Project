@@ -133,6 +133,29 @@ class SQLitePersistenceTestCase(unittest.TestCase):
         self.assertIn('name="interests"', edit_page)
         self.assertIn("SQLite, Flask", edit_page)
 
+    def test_group_message_notification_data_lists_other_active_members(self) -> None:
+        app = self.create_test_app()
+        store = app.config["DATA_STORE"]
+        test_user = store.find_by_email("test@southernct.edu")
+        assert test_user is not None
+        software_thread = next(
+            thread
+            for thread in store.list_user_study_group_chats(test_user.id)
+            if thread["group_title"] == "Software Design Studio"
+        )
+
+        notification_data = store.group_message_notification_data(
+            software_thread["group_id"],
+            test_user.id,
+        )
+
+        self.assertEqual(notification_data["group_title"], "Software Design Studio")
+        self.assertEqual(notification_data["sender_name"], "Test User")
+        self.assertEqual(
+            notification_data["recipients"],
+            ["alex.mitchell@southernct.edu", "priya.nair@southernct.edu"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
