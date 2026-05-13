@@ -98,7 +98,7 @@
                 <div class="roster-list">
                     {% for member in group.members %}
                         <article class="roster-item">
-                            <a class="roster-member-link" href="/profile/{{ member.id }}">
+                            <a class="roster-member-link" href="{{ url_for('profile', user_id=member.id) }}">
                                 {% if member.profile_image_url %}
                                     <img
                                         class="roster-avatar"

@@ -12,7 +12,7 @@
 <body>
 <a class="skip-link" href="#main-content">Skip to main content</a>
 
-{% if request.endpoint in ("profile", "user_profile", "update_profile") %}
+{% if request.endpoint in ("profile", "update_profile") %}
   {% set active_page = "profile" %}
 {% endif %}
 {% include "partials/_app_header.html" %}
