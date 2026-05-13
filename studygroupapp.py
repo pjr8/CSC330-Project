@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 
 from accounts import accounts_bp
 from app_store import SQLiteStudyGroupStore
@@ -156,7 +156,24 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
 
     @app.route("/profile")
     def profile():
-        return render_template("profile.html", user=current_user())
+        return render_template(
+            "profile.html",
+            user=current_user(),
+            is_own_profile=True,
+        )
+
+    @app.route("/profile/<user_id>")
+    def user_profile(user_id: str):
+        user = data_store().get_user(user_id)
+        if user is None:
+            abort(404)
+
+        session_user = current_user()
+        return render_template(
+            "profile.html",
+            user=user,
+            is_own_profile=session_user is not None and user.id == session_user.id,
+        )
 
     @app.route("/update-profile", methods=["GET", "POST"])
     def update_profile():

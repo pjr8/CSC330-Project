@@ -98,13 +98,25 @@
                 <div class="roster-list">
                     {% for member in group.members %}
                         <article class="roster-item">
-                            <div>
-                                <h3>{{ member.name }}</h3>
-                                {% if member.major %}
-                                    <p>{{ member.major }}</p>
+                            <a class="roster-member-link" href="{{ url_for('user_profile', user_id=member.id) }}">
+                                {% if member.profile_image_url %}
+                                    <img
+                                        class="roster-avatar"
+                                        src="{{ member.profile_image_url }}"
+                                        alt="{{ member.name }} profile picture"
+                                        width="44"
+                                        height="44">
+                                {% else %}
+                                    <span class="roster-avatar roster-avatar--initials" aria-hidden="true">{{ member.initials }}</span>
                                 {% endif %}
-                            </div>
-                            <span>{{ member.role }}</span>
+                                <span class="roster-member-copy">
+                                    <span class="roster-member-name">{{ member.name }}</span>
+                                    {% if member.major %}
+                                        <span class="roster-member-major">{{ member.major }}</span>
+                                    {% endif %}
+                                </span>
+                            </a>
+                            <span class="roster-role">{{ member.role }}</span>
                         </article>
                     {% else %}
                         <p class="empty-state">No active members are on this roster yet.</p>

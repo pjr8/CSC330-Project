@@ -56,8 +56,13 @@ def study_group_detail_view_model(
     is_full = not group.hasAvailableSeat()
     members = [
         {
+            "id": str(membership.member.id),
             "name": _member_display_name(membership.member),
             "major": membership.member.major if membership.member else "",
+            "profile_image_url": membership.member.profileImageUrl
+            if membership.member
+            else "",
+            "initials": _member_initials(membership.member),
             "role": _membership_role(group, membership.member, membership.role),
         }
         for membership in group.memberships
@@ -123,6 +128,21 @@ def _member_display_name(member: User | None) -> str:
         return "Southern student"
 
     return member.getFullName() or member.firstName or member.scsuEmail
+
+
+def _member_initials(member: User | None) -> str:
+    if member is None:
+        return "SS"
+
+    initials = "".join(
+        name_part[0]
+        for name_part in (member.firstName, member.lastName)
+        if name_part
+    )
+    if initials:
+        return initials.upper()
+
+    return (member.scsuEmail[:2] or "SS").upper()
 
 
 def _membership_role(group: StudyGroup, member: User | None, role: str) -> str:
