@@ -3,8 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from uuid import UUID
-
 from flask import Flask, abort, redirect, render_template, request, session, url_for
 
 from accounts import accounts_bp
@@ -156,17 +154,28 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
         return redirect(url_for("study_groups.listings"))
 
     @app.route("/profile")
-    @app.route("/profile/<uuid:user_id>")
-    def profile(user_id: UUID | None = None):
+    @app.route("/profile/<user_id>")
+    def profile(user_id: str | None = None):
         session_user = current_user()
-        user = session_user if user_id is None else data_store().get_user(user_id)
-        if user is None:
+        requested_user_id = (
+            user_id
+            or request.args.get("user_id", "").strip()
+            or request.args.get("id", "").strip()
+        )
+        profile_user = (
+            data_store().get_user(requested_user_id)
+            if requested_user_id
+            else session_user
+        )
+        if profile_user is None:
             abort(404)
 
         return render_template(
             "profile.html",
-            user=user,
-            is_own_profile=user.id == session_user.id,
+            profile_user=profile_user,
+            user=profile_user,
+            is_own_profile=session_user is not None
+            and profile_user.id == session_user.id,
         )
 
     @app.route("/update-profile", methods=["GET", "POST"])

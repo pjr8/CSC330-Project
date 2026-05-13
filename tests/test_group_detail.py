@@ -75,6 +75,16 @@ class StudyGroupDetailTestCase(unittest.TestCase):
         self.assertIn("Where to find me", page)
         self.assertNotIn("Edit profile", page)
 
+    def test_member_profile_can_be_loaded_from_query_parameter(self) -> None:
+        alex = self._user_by_email("alex.mitchell@southernct.edu")
+
+        response = self.client.get(f"/profile?user_id={alex.id}")
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertIn("Alex Mitchell", page)
+        self.assertNotIn("Edit profile", page)
+
     def test_own_profile_link_keeps_edit_button(self) -> None:
         current_user = self._user_by_email("test@southernct.edu")
 
