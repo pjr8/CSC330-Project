@@ -421,7 +421,56 @@ dd {
     font-size: 0.92rem;
 }
 
-.roster-item span {
+.roster-member-link {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.roster-member-link:hover .roster-member-name,
+.roster-member-link:focus-visible .roster-member-name {
+    color: var(--medium-blue);
+    text-decoration: underline;
+}
+
+.roster-avatar {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    object-fit: cover;
+    border: 2px solid #c7ddfb;
+    border-radius: 50%;
+    background: var(--surface-blue);
+}
+
+.roster-avatar--initials {
+    display: inline-grid;
+    place-items: center;
+    color: var(--reflex-blue);
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.roster-member-copy {
+    min-width: 0;
+    display: grid;
+}
+
+.roster-member-name {
+    color: var(--reflex-blue);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.12;
+}
+
+.roster-member-major {
+    margin-top: 0.25rem;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.roster-role {
     flex: 0 0 auto;
     min-height: 28px;
     display: inline-flex;

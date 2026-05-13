@@ -45,6 +45,8 @@ class SignupTestCase(unittest.TestCase):
 
         for field_name in ("major", "interests", "bio"):
             self.assertNotIn(f'name="{field_name}"', page)
+        self.assertIn("Frequent Hangout Places", page)
+        self.assertNotIn("Best way to contact you", page)
         self.assertNotIn("/home</span>", page)
         self.assertNotIn("Next step", page)
 

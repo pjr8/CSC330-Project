@@ -109,16 +109,16 @@
                         </div>
 
                         <div class="field field--wide{% if errors.get('contactInfo') %} field--error{% endif %}">
-                            <label for="contactInfo">Best way to contact you</label>
+                            <label for="contactInfo">Frequent Hangout Places</label>
                             <textarea
                                 id="contactInfo"
                                 name="contactInfo"
                                 rows="3"
-                                placeholder="SCSU email, phone, Discord, or another preferred contact method"
+                                placeholder="Library study rooms, student center, cafe, or another campus spot"
                                 required
                                 {% if errors.get('contactInfo') %}aria-invalid="true" aria-describedby="contactInfo-hint contactInfo-error"{% else %}aria-describedby="contactInfo-hint"{% endif %}
                             >{{ form_data.contactInfo }}</textarea>
-                            <p class="field-hint" id="contactInfo-hint">Shown on your profile for study partners.</p>
+                            <p class="field-hint" id="contactInfo-hint">Shown on your profile so study partners know where to find you.</p>
                             {% if errors.get('contactInfo') %}
                                 <p class="field-error" id="contactInfo-error">{{ errors.contactInfo }}</p>
                             {% endif %}

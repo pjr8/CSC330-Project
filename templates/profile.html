@@ -21,7 +21,9 @@
     </div>
   </div>
 
-  <a href="{{ url_for('update_profile') }}" class="button button--primary">Edit profile</a>
+  {% if is_own_profile %}
+    <a href="{{ url_for('update_profile') }}" class="button button--primary">Edit profile</a>
+  {% endif %}
 </section>
 
 <div class="profile-layout">

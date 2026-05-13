@@ -57,10 +57,31 @@ class StudyGroupDetailTestCase(unittest.TestCase):
         self.assertIn("Jennings Hall, Lab 148 + virtual option", page)
         self.assertIn("4 / 10 members", page)
         self.assertIn("Alex Mitchell", page)
+        alex = self._user_by_email("alex.mitchell@southernct.edu")
+        self.assertIn(f'href="/profile/{alex.id}"', page)
         self.assertIn("Join group", page)
         self.assertIn('name="next" value="detail"', page)
         self.assertIn("Join this group to view the meeting link.", page)
         self.assertNotIn("https://example.edu/scsu-bio211-review", page)
+
+    def test_member_profile_links_show_public_profile_without_edit_button(self) -> None:
+        alex = self._user_by_email("alex.mitchell@southernct.edu")
+
+        response = self.client.get(f"/profile/{alex.id}")
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertIn("Alex Mitchell", page)
+        self.assertIn("Where to find me", page)
+        self.assertNotIn("Edit profile", page)
+
+    def test_own_profile_link_keeps_edit_button(self) -> None:
+        current_user = self._user_by_email("test@southernct.edu")
+
+        response = self.client.get(f"/profile/{current_user.id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Edit profile", response.get_data(as_text=True))
 
     def test_member_detail_shows_virtual_link_and_joined_state(self) -> None:
         group = self._group_named("Research Writing Circle")
@@ -198,6 +219,12 @@ class StudyGroupDetailTestCase(unittest.TestCase):
         store = SQLiteStudyGroupStore(self.database_path)
         _, groups = store.study_group_listing_data(None)
         return next(group for group in groups if group.title == title)
+
+    def _user_by_email(self, email: str) -> User:
+        store = SQLiteStudyGroupStore(self.database_path)
+        user = store.find_by_email(email)
+        assert user is not None
+        return user
 
     def _sign_in_as(self, email: str) -> None:
         store = SQLiteStudyGroupStore(self.database_path)
