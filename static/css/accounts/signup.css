@@ -93,8 +93,8 @@ button {
 .signup-brand-logo img {
     display: block;
     width: auto;
-    height: 58px;
-    max-width: min(360px, 58vw);
+    height: 64px;
+    max-width: 100%;
     object-fit: contain;
 }
 
