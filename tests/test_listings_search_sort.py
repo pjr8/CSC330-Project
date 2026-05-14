@@ -52,7 +52,7 @@ class ListingsSearchSortTestCase(unittest.TestCase):
         self.assertIn("General Chemistry Lab Prep", page)
         self.assertNotIn("Anatomy Lab Review", page)
         self.assertNotIn("Calculus II Problem Session", page)
-        self.assertIn("Showing <strong>1</strong> of <strong>5</strong>", page)
+        self.assertIn("Showing <strong>1</strong> of <strong>8</strong>", page)
 
     def test_title_sort_orders_matching_groups_alphabetically(self) -> None:
         response = self.client.get("/listings?sort=title")
