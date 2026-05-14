@@ -1653,6 +1653,52 @@ class SQLiteStudyGroupStore:
                 maxMembers=5,
                 creator=users["lena"],
             ),
+            StudyGroup(
+                id=_stable_uuid("group:data-structures-review"),
+                title="Data Structures Review",
+                subject="CSC 212 - Data Structures",
+                description=(
+                    "Whiteboard practice for trees, hash tables, recursion, and "
+                    "runtime analysis before the next programming assessment."
+                ),
+                startAt=datetime(2026, 5, 11, 15, 30),
+                endAt=datetime(2026, 5, 11, 16, 45),
+                modality="In person",
+                location="Buley Library, Room 318",
+                maxMembers=7,
+                creator=users["alex"],
+            ),
+            StudyGroup(
+                id=_stable_uuid("group:psychology-exam-prep"),
+                title="Psychology Exam Prep",
+                subject="PSY 100 - Introduction to Psychology",
+                description=(
+                    "Concept mapping, flashcard review, and practice questions "
+                    "covering memory, learning, development, and research methods."
+                ),
+                startAt=datetime(2026, 5, 12, 13, 0),
+                endAt=datetime(2026, 5, 12, 14, 0),
+                modality="Hybrid",
+                location="Engleman Hall, B121",
+                meetingLink="https://example.edu/scsu-psy100-prep",
+                maxMembers=9,
+                creator=users["sarah"],
+            ),
+            StudyGroup(
+                id=_stable_uuid("group:business-statistics-lab"),
+                title="Business Statistics Lab",
+                subject="MGT 240 - Business Statistics",
+                description=(
+                    "Guided work on probability distributions, confidence intervals, "
+                    "and spreadsheet setup for the final analysis project."
+                ),
+                startAt=datetime(2026, 5, 13, 17, 0),
+                endAt=datetime(2026, 5, 13, 18, 15),
+                modality="Virtual",
+                meetingLink="https://example.edu/scsu-mgt240-lab",
+                maxMembers=6,
+                creator=users["test"],
+            ),
         ]
 
         for group in groups:
@@ -1664,6 +1710,9 @@ class SQLiteStudyGroupStore:
             (groups[2], [users["priya"], users["lena"], users["marcus"], users["alex"]]),
             (groups[3], [users["marcus"], users["test"], users["alex"]]),
             (groups[4], [users["lena"], users["priya"]]),
+            (groups[5], [users["alex"], users["test"], users["sarah"]]),
+            (groups[6], [users["sarah"], users["priya"]]),
+            (groups[7], [users["test"], users["marcus"]]),
         ]
 
         for group, members in member_sets:
